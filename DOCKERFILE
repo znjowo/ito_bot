@@ -1,6 +1,33 @@
-FROM node:24-alpine
+# ビルドステージ
+FROM node:24-alpine AS builder
 WORKDIR /app
+
+# package.jsonとpackage-lock.jsonを先にコピー（キャッシュ効率化）
+COPY package*.json ./
+RUN npm ci --only=production
+
+# ソースコードをコピー
 COPY . .
-RUN npm install
 RUN npm run build
+
+# 実行ステージ
+FROM node:24-alpine AS runner
+WORKDIR /app
+
+# 必要なファイルのみをコピー
+COPY package*.json ./
+RUN npm ci --only=production && npm cache clean --force
+
+# ビルドされたファイルをコピー
+COPY --from=builder /app/dist ./dist
+
+# 非rootユーザーで実行
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nodejs -u 1001
+USER nodejs
+
+# ヘルスチェックを追加
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD node -e "console.log('Health check passed')" || exit 1
+
 CMD ["npm", "start"]

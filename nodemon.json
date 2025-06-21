@@ -1,5 +1,5 @@
 {
-	"exec": "tsx --watch -r dotenv/config src/index.ts",
-	"ext": "ts",
-	"watch": ["src"]
+    "exec": "tsx --watch -r dotenv/config src/index.ts",
+    "ext": "ts",
+    "watch": ["src"]
 }
