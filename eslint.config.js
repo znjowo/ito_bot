@@ -1,40 +1,19 @@
-import js from "@eslint/js";
-import typescript from "@typescript-eslint/eslint-plugin";
-import typescriptParser from "@typescript-eslint/parser";
-import prettier from "eslint-config-prettier";
-
-export default [
-    js.configs.recommended,
-    {
-        files: ["**/*.ts", "**/*.tsx"],
-        languageOptions: {
-            parser: typescriptParser,
-            parserOptions: {
-                ecmaVersion: "latest",
-                sourceType: "module",
-            },
-        },
-        plugins: {
-            "@typescript-eslint": typescript,
-        },
-        rules: {
-            ...typescript.configs.recommended.rules,
-            "@typescript-eslint/no-unused-vars": "error",
-            "@typescript-eslint/no-explicit-any": "warn",
-            "@typescript-eslint/explicit-function-return-type": "off",
-            "@typescript-eslint/explicit-module-boundary-types": "off",
-            "@typescript-eslint/no-inferrable-types": "off",
-        },
+module.exports = {
+    env: {
+        browser: true,
+        es2021: true,
+        node: true,
     },
-    {
-        files: ["**/*.js", "**/*.mjs"],
-        languageOptions: {
-            ecmaVersion: "latest",
-            sourceType: "module",
-        },
+    extends: ["standard", "prettier"],
+    parser: "@typescript-eslint/parser",
+    parserOptions: {
+        ecmaVersion: "latest",
+        sourceType: "module",
     },
-    prettier,
-    {
-        ignores: ["node_modules/", "dist/", "*.log", ".env*"],
+    plugins: ["@typescript-eslint"],
+    rules: {
+        "no-use-before-define": "off",
+        "no-useless-constructor": "off",
+        "require-await": "error",
     },
-];
+};
