@@ -25,4 +25,3 @@ process.on("unhandledRejection", reason =>
 process.on("uncaughtException", errorHandler); // 未処理のエラーが発生したとき
 
 client.login(Env.token); // Botをログインさせる
- 
