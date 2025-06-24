@@ -36,6 +36,15 @@ class ItoForceEndButton extends BaseInteractionManager<ButtonInteraction> {
                 return;
             }
 
+            // ゲーム作成者かチェック
+            if (game.createdBy !== this.interaction.user.id) {
+                await this.interaction.followUp({
+                    content: "❌ ゲーム作成者のみが強制終了できます",
+                    ephemeral: true,
+                });
+                return;
+            }
+
             // ゲーム終了前に全プレイヤーのカードを取得（削除されたカードも含む）
             const allCards = await CardManager.revealAllCards(gameId);
 
