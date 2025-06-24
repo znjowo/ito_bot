@@ -1,11 +1,5 @@
 /* eslint-disable no-unused-vars */
 
-// プロジェクトタイプ
-export enum ProjectTypes {
-    Prod = "PRODUCT", // 本番
-    Dev = "DEVELOPMENT", // 開発
-}
-
 // カスタムID
 export enum CustomIds {
     CommandTestSendMessage = "command_test_send_message", // メッセージ送信コマンド

@@ -4,6 +4,7 @@ import {
     ChatInputApplicationCommandData,
     CommandInteraction,
     ModalSubmitInteraction,
+    SlashCommandBuilder,
 } from "discord.js";
 import BaseInteractionManager from "~/managers/bases/BaseInteractionManager";
 import { CustomIds } from "./IEnum";
@@ -15,7 +16,7 @@ interface BasePack {
 
 // コマンドパック
 export interface CommandPack extends BasePack {
-    data: ChatInputApplicationCommandData;
+    data: SlashCommandBuilder | ChatInputApplicationCommandData;
 }
 
 // サブコマンドパック
