@@ -404,4 +404,47 @@ export default class GameManager {
             throw error;
         }
     }
+
+    /**
+     * ゲームのお題を更新
+     */
+    public static async updateGameTopic(
+        gameId: string,
+        topicId: string
+    ): Promise<void> {
+        try {
+            // 更新前のゲーム情報を取得
+            const beforeGame = await this.prisma.game.findUnique({
+                where: { id: gameId },
+                include: { topic: true },
+            });
+
+            if (!beforeGame) {
+                throw new Error(`ゲームが見つかりません: ${gameId}`);
+            }
+
+            // 新しいお題の存在確認
+            const newTopic = await this.prisma.topic.findUnique({
+                where: { id: topicId },
+            });
+
+            if (!newTopic) {
+                throw new Error(`お題が見つかりません: ${topicId}`);
+            }
+
+            // ゲームのお題を更新
+            const updatedGame = await this.prisma.game.update({
+                where: { id: gameId },
+                data: { topicId },
+                include: { topic: true },
+            });
+
+            Logger.info(
+                `ゲームのお題を更新しました: ${gameId} - 変更前: ${beforeGame.topic?.title || "なし"} -> 変更後: ${updatedGame.topic?.title || "なし"}`
+            );
+        } catch (error) {
+            Logger.error(`ゲームお題更新エラー: ${error}`);
+            throw error;
+        }
+    }
 }
