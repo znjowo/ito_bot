@@ -130,31 +130,32 @@ export default class GameManager {
     }
 
     /**
-     * ゲームから参加者を削除
+     * ゲームから退出
      */
-    public static async leaveGame(
-        gameId: string,
-        discordId: string
-    ): Promise<void> {
+    public static async leaveGame(gameId: string, userId: string): Promise<void> {
         try {
-            const player = await this.prisma.player.findUnique({
-                where: { discordId },
-            });
-
-            if (!player) {
-                throw new Error("プレイヤーが見つかりません");
-            }
-
-            await this.prisma.gamePlayer.deleteMany({
+            // 参加しているかチェック
+            const existingPlayer = await this.prisma.gamePlayer.findFirst({
                 where: {
-                    gameId,
-                    playerId: player.id,
+                    gameId: gameId,
+                    player: {
+                        discordId: userId,
+                    },
                 },
             });
 
-            Logger.info(
-                `プレイヤーがゲームから退出しました: ${discordId} (${gameId})`
-            );
+            if (!existingPlayer) {
+                throw new Error("このゲームに参加していません");
+            }
+
+            // GamePlayerレコードを削除
+            await this.prisma.gamePlayer.delete({
+                where: {
+                    id: existingPlayer.id,
+                },
+            });
+
+            Logger.info(`プレイヤーがゲームから退出しました: ${userId} from ${gameId}`);
         } catch (error) {
             Logger.error(`ゲーム退出エラー: ${error}`);
             throw error;
@@ -241,7 +242,10 @@ export default class GameManager {
 
             // 利用可能な数字の範囲をチェック
             if (maxNumber - minNumber + 1 < totalCards) {
-                throw new Error("カード数が多すぎます");
+                const availableNumbers = maxNumber - minNumber + 1;
+                throw new Error(
+                    `カード配布不可能: 必要カード数(${totalCards}枚) > 利用可能数字(${availableNumbers}個, ${minNumber}-${maxNumber})`
+                );
             }
 
             // ランダムな数字を生成（重複なし）
@@ -444,6 +448,34 @@ export default class GameManager {
             );
         } catch (error) {
             Logger.error(`ゲームお題更新エラー: ${error}`);
+            throw error;
+        }
+    }
+
+    /**
+     * ゲームを削除
+     */
+    public static async deleteGame(gameId: string): Promise<void> {
+        try {
+            // ゲームに関連するすべてのデータを削除
+            // 1. カードを削除
+            await this.prisma.card.deleteMany({
+                where: { gameId: gameId },
+            });
+
+            // 2. ゲームプレイヤーを削除
+            await this.prisma.gamePlayer.deleteMany({
+                where: { gameId: gameId },
+            });
+
+            // 3. ゲーム自体を削除
+            await this.prisma.game.delete({
+                where: { id: gameId },
+            });
+
+            Logger.info(`ゲームが削除されました: ${gameId}`);
+        } catch (error) {
+            Logger.error(`ゲーム削除エラー: ${error}`);
             throw error;
         }
     }

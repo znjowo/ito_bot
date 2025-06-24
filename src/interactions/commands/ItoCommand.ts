@@ -8,11 +8,13 @@ import {
 } from "discord.js";
 import { CommandPack, instance } from "~/interfaces/IDiscord";
 import { CustomIds } from "~/interfaces/IEnum";
+import { DIContainer } from "~/lib/DIContainer";
 import { Logger } from "~/lib/Logger";
 import BaseInteractionManager from "~/managers/bases/BaseInteractionManager";
-import GameManager from "~/managers/GameManager";
 
 class ItoCommand extends BaseInteractionManager<ChatInputCommandInteraction> {
+    private gameService = DIContainer.getInstance().getGameService();
+
     protected async main(): Promise<void> {
         try {
             // チャンネルがテキストチャンネルかチェック
@@ -25,7 +27,7 @@ class ItoCommand extends BaseInteractionManager<ChatInputCommandInteraction> {
             }
 
             // 既存のアクティブなゲームをチェック
-            const existingGame = await GameManager.getActiveGameByChannel(
+            const existingGame = await this.gameService.getActiveGameByChannel(
                 this.interaction.channelId
             );
             if (existingGame) {
@@ -51,8 +53,21 @@ class ItoCommand extends BaseInteractionManager<ChatInputCommandInteraction> {
                 return;
             }
 
+            // 基本的なカード配布可能性チェック（最大参加者数を仮定）
+            const availableNumbers = max - min + 1;
+            const maxPlayersEstimate = 10; // 想定最大参加者数
+            const worstCaseCards = maxPlayersEstimate * cardCount;
+
+            if (availableNumbers < worstCaseCards) {
+                await this.interaction.reply({
+                    content: `警告: 設定された範囲が狭すぎる可能性があります。\n利用可能数字: ${availableNumbers}個 (${min}-${max})\n想定最大必要カード数: ${worstCaseCards}枚 (${maxPlayersEstimate}人 × ${cardCount}枚)\n\n多くの参加者が予想される場合は、数字範囲を広げるかカード枚数を減らしてください。`,
+                    ephemeral: true,
+                });
+                return;
+            }
+
             // ゲームを作成
-            const game = await GameManager.createGame({
+            const game = await this.gameService.createGame({
                 channelId: this.interaction.channelId,
                 guildId: this.interaction.guildId!,
                 createdBy: this.interaction.user.id,
@@ -63,11 +78,21 @@ class ItoCommand extends BaseInteractionManager<ChatInputCommandInteraction> {
             });
 
             // 作成者を最初の参加者として追加
-            await GameManager.joinGame(
+            await this.gameService.joinGame(
                 game.id,
                 this.interaction.user.id,
                 this.interaction.user.username
             );
+
+            // 更新されたゲーム情報を取得
+            const updatedGame = await this.gameService.getGameById(game.id);
+            if (!updatedGame) {
+                await this.interaction.reply({
+                    content: "ゲーム情報の取得に失敗しました。",
+                    ephemeral: true,
+                });
+                return;
+            }
 
             // 埋め込みメッセージを作成
             const embed = new EmbedBuilder()
@@ -92,13 +117,18 @@ class ItoCommand extends BaseInteractionManager<ChatInputCommandInteraction> {
                 .setTimestamp();
 
             // 参加ボタンを作成
-            const joinButton =
-                new ActionRowBuilder<ButtonBuilder>().addComponents(
+            const joinRow = new ActionRowBuilder<ButtonBuilder>()
+                .addComponents(
                     new ButtonBuilder()
                         .setCustomId(`${CustomIds.ItoJoin}${game.id}`)
                         .setLabel("参加する")
                         .setStyle(ButtonStyle.Primary)
                         .setEmoji("🎯"),
+                    new ButtonBuilder()
+                        .setCustomId(`${CustomIds.ItoLeave}${game.id}`)
+                        .setLabel("退出する")
+                        .setStyle(ButtonStyle.Secondary)
+                        .setEmoji("🚪"),
                     new ButtonBuilder()
                         .setCustomId(`${CustomIds.ItoStart}${game.id}`)
                         .setLabel("ゲーム開始")
@@ -106,17 +136,26 @@ class ItoCommand extends BaseInteractionManager<ChatInputCommandInteraction> {
                         .setEmoji("▶️")
                         .setDisabled(true) // 最低2人必要
                 );
+            
+            const controlRow = new ActionRowBuilder<ButtonBuilder>()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId(`${CustomIds.ItoCancel}${game.id}`)
+                        .setLabel("募集キャンセル")
+                        .setStyle(ButtonStyle.Danger)
+                        .setEmoji("❌")
+                );
 
-            await this.interaction.reply({
+            const message = await this.interaction.reply({
                 embeds: [embed],
-                components: [joinButton],
+                components: [joinRow, controlRow],
+                fetchReply: true,
             });
 
-            // メッセージIDを保存
-            const reply = await this.interaction.fetchReply();
-            await GameManager.saveGameMessage(
+            // メッセージ情報を保存
+            await this.gameService.saveGameMessage(
                 game.id,
-                reply.id,
+                message.id,
                 this.interaction.channelId
             );
 
@@ -126,7 +165,7 @@ class ItoCommand extends BaseInteractionManager<ChatInputCommandInteraction> {
         } catch (error) {
             Logger.error(`itoコマンドエラー: ${error}`);
             await this.interaction.reply({
-                content: "ゲームの作成中にエラーが発生しました。",
+                content: "ゲーム作成中にエラーが発生しました。",
                 ephemeral: true,
             });
         }

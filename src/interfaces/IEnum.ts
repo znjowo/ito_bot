@@ -16,6 +16,8 @@ export enum CustomIds {
 
     // itoゲーム用
     ItoJoin = "ito_join_", // 参加ボタン
+    ItoLeave = "ito_leave_", // 退出ボタン
+    ItoCancel = "ito_cancel_", // キャンセルボタン
     ItoStart = "ito_start_", // 開始ボタン
     ItoPlay = "ito_play_", // カード提示ボタン
     ItoForceEnd = "ito_force_end", // 強制終了ボタン

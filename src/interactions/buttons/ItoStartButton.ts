@@ -7,12 +7,14 @@ import {
 } from "discord.js";
 import { ButtonPack, instance } from "~/interfaces/IDiscord";
 import { CustomIds } from "~/interfaces/IEnum";
+import { DIContainer } from "~/lib/DIContainer";
 import { Logger } from "~/lib/Logger";
 import BaseInteractionManager from "~/managers/bases/BaseInteractionManager";
-import CardManager from "~/managers/CardManager";
-import GameManager from "~/managers/GameManager";
 
 class ItoStartButton extends BaseInteractionManager<ButtonInteraction> {
+    private gameService = DIContainer.getInstance().getGameService();
+    private cardService = DIContainer.getInstance().getCardService();
+
     protected async main(): Promise<void> {
         try {
             // カスタムIDからゲームIDを抽出
@@ -22,7 +24,7 @@ class ItoStartButton extends BaseInteractionManager<ButtonInteraction> {
             );
 
             // ゲーム情報を取得
-            const game = await GameManager.getGameWithRelations(gameId);
+            const game = await this.gameService.getGameById(gameId);
             if (!game) {
                 await this.interaction.reply({
                     content: "ゲームが見つかりません。",
@@ -58,8 +60,18 @@ class ItoStartButton extends BaseInteractionManager<ButtonInteraction> {
                 return;
             }
 
+            // カード配布可能性チェック
+            const distributionInfo = game.getCardDistributionInfo();
+            if (!distributionInfo.isPossible) {
+                await this.interaction.reply({
+                    content: `エラー: カード配布が不可能です。\n必要カード数: ${distributionInfo.totalCardsNeeded}枚 (${game.players.length}人 × ${game.cardCount}枚)\n利用可能数字: ${distributionInfo.availableNumbers}個 (${game.minNumber}-${game.maxNumber})\n\n設定を変更してください：\n• 数字範囲を広げる\n• カード枚数を減らす\n• 参加者数を減らす`,
+                    ephemeral: true,
+                });
+                return;
+            }
+
             // ゲームを開始
-            const startedGame = await GameManager.startGame(gameId);
+            const startedGame = await this.gameService.startGame(gameId);
 
             // お題情報を取得
             const topic = startedGame.topic;
@@ -78,7 +90,7 @@ class ItoStartButton extends BaseInteractionManager<ButtonInteraction> {
             >();
 
             for (const player of startedGame.players) {
-                const cards = await CardManager.getPlayerCards(
+                const cards = await this.cardService.getPlayerCards(
                     gameId,
                     player.player.discordId
                 );
@@ -168,7 +180,7 @@ class ItoStartButton extends BaseInteractionManager<ButtonInteraction> {
     ): Promise<void> {
         try {
             for (const player of game.players) {
-                const cards = await CardManager.getPlayerCards(
+                const cards = await this.cardService.getPlayerCards(
                     gameId,
                     player.player.discordId
                 );

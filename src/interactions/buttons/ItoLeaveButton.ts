@@ -11,13 +11,13 @@ import { DIContainer } from "~/lib/DIContainer";
 import { Logger } from "~/lib/Logger";
 import BaseInteractionManager from "~/managers/bases/BaseInteractionManager";
 
-class ItoJoinButton extends BaseInteractionManager<ButtonInteraction> {
+class ItoLeaveButton extends BaseInteractionManager<ButtonInteraction> {
     private gameService = DIContainer.getInstance().getGameService();
 
     protected async main(): Promise<void> {
         try {
             // カスタムIDからゲームIDを抽出
-            const gameId = this.interaction.customId.replace(CustomIds.ItoJoin, "");
+            const gameId = this.interaction.customId.replace(CustomIds.ItoLeave, "");
             
             // ゲーム情報を取得
             const game = await this.gameService.getGameById(gameId);
@@ -32,27 +32,32 @@ class ItoJoinButton extends BaseInteractionManager<ButtonInteraction> {
             // ゲームが募集状態でない場合はエラー
             if (!game.isWaiting()) {
                 await this.interaction.reply({
-                    content: "このゲームは既に開始されているため参加できません。",
+                    content: "このゲームは既に開始されているため退出できません。",
                     ephemeral: true,
                 });
                 return;
             }
 
-            // 既に参加しているかチェック
-            if (game.isPlayerJoined(this.interaction.user.id)) {
+            // 参加しているかチェック
+            if (!game.isPlayerJoined(this.interaction.user.id)) {
                 await this.interaction.reply({
-                    content: "既にこのゲームに参加しています。",
+                    content: "このゲームに参加していません。",
                     ephemeral: true,
                 });
                 return;
             }
 
-            // ゲームに参加
-            await this.gameService.joinGame(
-                gameId,
-                this.interaction.user.id,
-                this.interaction.user.username
-            );
+            // ゲーム作成者の場合は退出できない
+            if (game.isCreator(this.interaction.user.id)) {
+                await this.interaction.reply({
+                    content: "ゲーム作成者は退出できません。ゲームを削除するには強制終了を使用してください。",
+                    ephemeral: true,
+                });
+                return;
+            }
+
+            // ゲームから退出
+            await this.gameService.leaveGame(gameId, this.interaction.user.id);
 
             // 更新されたゲーム情報を取得
             const updatedGame = await this.gameService.getGameById(gameId);
@@ -64,42 +69,40 @@ class ItoJoinButton extends BaseInteractionManager<ButtonInteraction> {
                 return;
             }
 
+            // 参加者リストを作成
+            const playerList = updatedGame.players.length > 0
+                ? updatedGame.players.map(player => `• ${player.player.username}`).join("\n")
+                : "参加者がいません";
+
             // カード配布可能性チェック
             const distributionInfo = updatedGame.getCardDistributionInfo();
-
-            // 参加者リストを作成
-            const playerList = updatedGame.players
-                .map(player => `• ${player.player.username}`)
-                .join("\n");
 
             // 埋め込みメッセージを更新
             const embed = new EmbedBuilder()
                 .setTitle("🎮 itoゲーム募集")
-                .setDescription(
-                    `${updatedGame.isCreator(this.interaction.user.id) ? this.interaction.user : `<@${updatedGame.createdBy}>`} がitoゲームを開始しました！`
-                )
+                .setDescription(`<@${updatedGame.createdBy}> がitoゲームを開始しました！`)
                 .addFields(
-                    {
-                        name: "📊 設定",
-                        value: `数字範囲: ${updatedGame.minNumber}-${updatedGame.maxNumber}\nカード枚数: ${updatedGame.cardCount}枚\nライフ: ${updatedGame.hp}`,
-                        inline: true,
+                    { 
+                        name: "📊 設定", 
+                        value: `数字範囲: ${updatedGame.minNumber}-${updatedGame.maxNumber}\nカード枚数: ${updatedGame.cardCount}枚\nライフ: ${updatedGame.hp}`, 
+                        inline: true 
                     },
-                    {
-                        name: "👥 参加者",
-                        value: `${updatedGame.players.length}人`,
-                        inline: true,
+                    { 
+                        name: "👥 参加者", 
+                        value: `${updatedGame.players.length}人`, 
+                        inline: true 
                     },
-                    {
-                        name: "📋 参加者リスト",
-                        value: playerList,
-                        inline: false,
+                    { 
+                        name: "📋 参加者リスト", 
+                        value: playerList, 
+                        inline: false 
                     }
                 )
                 .setColor(distributionInfo.isPossible ? 0x00ff00 : 0xffa500)
                 .setTimestamp();
 
             // カード配布不可能な場合は警告を追加
-            if (!distributionInfo.isPossible) {
+            if (!distributionInfo.isPossible && updatedGame.players.length > 0) {
                 embed.addFields({
                     name: "⚠️ 警告",
                     value: `現在の参加者数では開始できません。\n必要カード数: ${distributionInfo.totalCardsNeeded}枚\n利用可能数字: ${distributionInfo.availableNumbers}個\n\n数字範囲を広げるか、カード枚数を減らしてください。`,
@@ -143,22 +146,21 @@ class ItoJoinButton extends BaseInteractionManager<ButtonInteraction> {
                 components: [joinRow, controlRow],
             });
 
-            Logger.info(
-                `プレイヤーが参加しました: ${this.interaction.user.username} (${gameId})`
-            );
+            Logger.info(`プレイヤーが退出しました: ${this.interaction.user.username} (${gameId})`);
+
         } catch (error) {
-            Logger.error(`ito参加ボタンエラー: ${error}`);
+            Logger.error(`ito退出ボタンエラー: ${error}`);
             await this.interaction.reply({
-                content: "参加処理中にエラーが発生しました。",
+                content: "退出処理中にエラーが発生しました。",
                 ephemeral: true,
             });
         }
     }
 }
 
-const itoJoinButton: ButtonPack = {
-    id: CustomIds.ItoJoin,
-    instance: instance(ItoJoinButton),
+const itoLeaveButton: ButtonPack = {
+    id: CustomIds.ItoLeave,
+    instance: instance(ItoLeaveButton),
 };
 
-export default itoJoinButton;
+export default itoLeaveButton; 
