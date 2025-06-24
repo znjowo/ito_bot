@@ -143,6 +143,7 @@ export class CardRepository implements ICardRepository {
             where: {
                 gameId,
                 isEliminated: false,
+                isRevealed: false,
             },
         });
     }
@@ -153,6 +154,7 @@ export class CardRepository implements ICardRepository {
                 gameId,
                 playerId,
                 isEliminated: false,
+                isRevealed: false,
             },
         });
     }

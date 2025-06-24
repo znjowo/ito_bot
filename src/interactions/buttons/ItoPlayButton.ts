@@ -1,11 +1,7 @@
 import { GameStatus } from "@prisma/client";
 import {
-    ActionRowBuilder,
     ButtonInteraction,
     EmbedBuilder,
-    ModalBuilder,
-    TextInputBuilder,
-    TextInputStyle
 } from "discord.js";
 import { ButtonPack, instance } from "~/interfaces/IDiscord";
 import { CustomIds } from "~/interfaces/IEnum";
@@ -55,61 +51,17 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
                 return;
             }
 
-            // モーダルを表示してカード番号を入力してもらう
-            const modal = new ModalBuilder()
-                .setCustomId(`card_input_${gameId}`)
-                .setTitle("カード提示");
-
-            const cardInput = new TextInputBuilder()
-                .setCustomId("card_number")
-                .setLabel("提示するカード番号を入力してください")
-                .setStyle(TextInputStyle.Short)
-                .setRequired(true)
-                .setMinLength(1)
-                .setMaxLength(10);
-
-            const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(cardInput);
-            modal.addComponents(firstActionRow);
-
-            await this.interaction.showModal(modal);
-
-            // モーダルの送信を待つ
-            const submitted = await this.interaction.awaitModalSubmit({
-                time: 60000,
-                filter: i => i.user.id === this.interaction.user.id && i.customId === `card_input_${gameId}`,
-            });
-
-            const cardNumberStr = submitted.fields.getTextInputValue("card_number");
-            const cardNumber = parseInt(cardNumberStr);
-
-            if (isNaN(cardNumber)) {
-                await submitted.reply({
-                    content: "有効な数字を入力してください。",
-                    ephemeral: true,
-                });
-                return;
-            }
-
-            // カードを提示
+            // 一番小さいカードを自動で提示
             const card = await this.cardService.playCard(gameId, this.interaction.user.id);
             if (!card) {
-                await submitted.reply({
+                await this.interaction.reply({
                     content: "提示できるカードがありません。",
                     ephemeral: true,
                 });
                 return;
             }
 
-            // 入力された番号と実際のカード番号をチェック
-            if (card.number !== cardNumber) {
-                await submitted.reply({
-                    content: `入力された番号 (${cardNumber}) と実際のカード番号 (${card.number}) が異なります。最小値のカード (${card.number}) が自動で提示されました。`,
-                    ephemeral: true,
-                });
-            }
-
             // 他の参加者の残りカード数を取得
-            const otherCards = await this.cardService.getRemainingCardCount(gameId);
             const isCorrect = await this.cardService.isCorrectCard(
                 gameId,
                 card.number,
@@ -118,10 +70,8 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
 
             if (isCorrect) {
                 await this.handleSuccess(gameId, card, game);
-                await submitted.deferUpdate();
             } else {
                 await this.handleFailure(gameId, card, game);
-                await submitted.deferUpdate();
             }
         } catch (error) {
             Logger.error(`itoプレイボタンエラー: ${error}`);
@@ -380,20 +330,54 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
     private async updateGameMessage(gameId: string, embed: EmbedBuilder): Promise<void> {
         try {
             const gameMessage = await this.gameService.getGameMessage(gameId);
-            if (!gameMessage) return;
+            if (!gameMessage) {
+                // ゲームメッセージが見つからない場合は、ボタンインタラクションに直接応答
+                await this.interaction.update({
+                    embeds: [embed],
+                    components: [], // ゲーム終了時はボタンを削除
+                });
+                return;
+            }
 
             const channel = await this.interaction.client.channels.fetch(gameMessage.channelId);
-            if (!channel || !channel.isTextBased()) return;
+            if (!channel || !channel.isTextBased()) {
+                // チャンネルが見つからない場合は、ボタンインタラクションに直接応答
+                await this.interaction.update({
+                    embeds: [embed],
+                    components: [],
+                });
+                return;
+            }
 
             const message = await channel.messages.fetch(gameMessage.messageId);
-            if (!message) return;
+            if (!message) {
+                // メッセージが見つからない場合は、ボタンインタラクションに直接応答
+                await this.interaction.update({
+                    embeds: [embed],
+                    components: [],
+                });
+                return;
+            }
 
+            // ゲームメッセージを更新
             await message.edit({
                 embeds: [embed],
                 components: message.components, // 既存のボタンを保持
             });
+
+            // ボタンインタラクションに応答（ボタンメッセージはそのまま）
+            await this.interaction.deferUpdate();
         } catch (error) {
             Logger.error(`ゲームメッセージ更新エラー: ${error}`);
+            // エラーの場合はボタンインタラクションに直接応答
+            try {
+                await this.interaction.update({
+                    embeds: [embed],
+                    components: [],
+                });
+            } catch (updateError) {
+                Logger.error(`インタラクション更新エラー: ${updateError}`);
+            }
         }
     }
 }

@@ -1,8 +1,8 @@
 import { Card } from "@prisma/client";
-import { ICardRepository, CardWithPlayer } from "~/repositories/CardRepository";
-import { IPlayerRepository } from "~/repositories/PlayerRepository";
-import { IGameRepository } from "~/repositories/GameRepository";
 import { Logger } from "~/lib/Logger";
+import { CardWithPlayer, ICardRepository } from "~/repositories/CardRepository";
+import { IGameRepository } from "~/repositories/GameRepository";
+import { IPlayerRepository } from "~/repositories/PlayerRepository";
 
 export interface ICardService {
     getPlayerCards(gameId: string, discordId: string): Promise<Card[]>;
@@ -130,7 +130,7 @@ export class CardService implements ICardService {
                 if (!hasCard) return false;
             }
 
-            // そのカードが最小値かチェック
+            // そのカードが最小値かチェック（提示中のカードを除外して判定）
             return await this.isSmallestCard(gameId, cardNumber);
         } catch (error) {
             Logger.error(`カード正解チェックエラー: ${error}`);
@@ -209,12 +209,8 @@ export class CardService implements ICardService {
             const game = await this.gameRepository.findById(gameId);
             if (!game) return false;
 
-            // 失敗数が上限に達している場合
-            if (game.failureCount >= game.hp) return true;
-
-            // 残りカードが0の場合
-            const remainingCount = await this.cardRepository.countRemaining(gameId);
-            return remainingCount === 0;
+            // 失敗数が上限に達している場合のみゲームオーバー
+            return game.failureCount >= game.hp;
         } catch (error) {
             Logger.error(`ゲームオーバーチェックエラー: ${error}`);
             return false;
@@ -245,11 +241,16 @@ export class CardService implements ICardService {
     private async isSmallestCard(gameId: string, cardNumber: number): Promise<boolean> {
         try {
             const allCards = await this.cardRepository.findByGame(gameId);
-            const activeCards = allCards.filter(card => !card.isEliminated && !card.isRevealed);
+            // 手札にあるカード：削除されておらず、場に出ていないカード
+            // ただし、現在提示中のカードは含める（まだ場に出る前の判定のため）
+            const handCards = allCards.filter(card => 
+                !card.isEliminated && 
+                (!card.isRevealed || card.number === cardNumber)
+            );
             
-            if (activeCards.length === 0) return false;
+            if (handCards.length === 0) return false;
             
-            const smallestNumber = Math.min(...activeCards.map(card => card.number));
+            const smallestNumber = Math.min(...handCards.map(card => card.number));
             return cardNumber === smallestNumber;
         } catch (error) {
             Logger.error(`最小カードチェックエラー: ${error}`);
