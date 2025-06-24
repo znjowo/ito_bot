@@ -1,5 +1,8 @@
-import WrapData from "~/lib/WrapData";
+import { CommandPack } from "~/interfaces/IDiscord";
+import showModalCommand from "./ShowModalCommand";
+import testCommand from "./TestCommand";
 
 // コマンドを登録する
-const commands = WrapData.toCommandPacks();
+const commands: CommandPack[] = [testCommand, showModalCommand];
+
 export default commands;

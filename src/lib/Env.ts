@@ -1,30 +1,28 @@
 import dotenv from "dotenv";
-import { ProjectTypes } from "~/interfaces/IEnum";
 dotenv.config();
 
 export default class Env {
     /* === Public 変数 === */
 
-    public static get type(): string {
-        return this._getEnv("TYPE"); // プロジェクトの種類
-    }
-
     public static get token(): string {
         return this._getEnv("TOKEN"); // DiscordのBotトークン
     }
 
+    public static get clientId(): string {
+        return this._getEnv("CLIENT_ID"); // DiscordのクライアントID
+    }
+
+    public static get guildId(): string {
+        return this._getEnv("GUILD_ID"); // DiscordのギルドID
+    }
+
+    public static get guildOnly(): boolean {
+        const value = process.env.GUILD_ONLY;
+        return value === "true" || value === "1";
+    }
+
     public static get logWebhookUrl(): string {
         return this._getEnv("LOG_WEBHOOK_URL"); // ログ出力用のWebhookURL
-    }
-
-    /* === Public 関数 === */
-
-    public static isProd(): boolean {
-        return this.type === ProjectTypes.Prod; // 本番環境かどうか
-    }
-
-    public static isDev(): boolean {
-        return this.type === ProjectTypes.Dev; // 開発環境かどうか
     }
 
     /* === Private 変数 === */

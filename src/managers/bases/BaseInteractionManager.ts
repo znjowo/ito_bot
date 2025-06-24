@@ -11,7 +11,6 @@ import {
 } from "discord.js";
 import { Interactions } from "~/interfaces/IDiscord";
 import { CustomIds } from "~/interfaces/IEnum";
-import WrapData from "~/lib/WrapData";
 import BaseManager from "./BaseManager";
 
 export default class BaseInteractionManager<
@@ -36,6 +35,26 @@ export default class BaseInteractionManager<
         }
     }
 
+    /* === Public 関数 === */
+
+    /**
+     * インタラクションを実行する
+     */
+    public async execute(): Promise<void> {
+        try {
+            await this.main();
+        } catch (error) {
+            console.error(
+                "インタラクション実行中にエラーが発生しました:",
+                error
+            );
+            await this.messageUpdate({
+                content: "エラーが発生しました。",
+                ephemeral: true,
+            });
+        }
+    }
+
     /* === Protected 関数 === */
 
     // メイン処理
@@ -47,16 +66,12 @@ export default class BaseInteractionManager<
         i?: BaseInteraction
     ) {
         if (i?.isAnySelectMenu() || i?.isButton()) {
-            await i
-                .update(WrapData.castToType<InteractionUpdateOptions>(options))
-                .catch(() => {});
+            await i.update(options as InteractionUpdateOptions).catch(() => {});
             return;
         }
 
         if (this.interaction.replied || this.interaction.deferred) {
-            await this.interaction
-                .editReply(WrapData.castToType<any>(options))
-                .catch(() => {});
+            await this.interaction.editReply(options as any).catch(() => {});
             return;
         }
 

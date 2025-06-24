@@ -1,6 +1,12 @@
-import errorHandler from "~/handlers/errorHandler";
+import ErrorHandler from "~/lib/ErrorHandler";
 
 export default abstract class BaseManager {
+    protected errorHandler: ErrorHandler;
+
+    constructor() {
+        this.errorHandler = ErrorHandler.getInstance();
+    }
+
     /* === Public 関数 === */
 
     // 実行
@@ -17,6 +23,6 @@ export default abstract class BaseManager {
 
     // エラー処理
     protected onError(error: Error) {
-        errorHandler(error); // エラーハンドラーを呼び出す
+        this.errorHandler.handleError(error, this.constructor.name);
     }
 }
