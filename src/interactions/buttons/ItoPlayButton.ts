@@ -242,12 +242,14 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
 
             // ゲームオーバーかチェック
             const isGameOver = await this.cardService.isGameOver(gameId);
+            
+            // 失敗によってカードが全削除された場合もゲームオーバー
+            const remainingCards = await this.cardService.getRemainingCardCount(gameId);
+            const isCardDepleted = remainingCards === 0;
 
-            if (isGameOver) {
+            if (isGameOver || isCardDepleted) {
                 // ゲームオーバーの原因を判定
-                const remainingCards = await this.cardService.getRemainingCardCount(gameId);
-
-                if (remainingCards === 0) {
+                if (isCardDepleted) {
                     embed
                         .setTitle("💀 ゲームオーバー！")
                         .setDescription("カードが全部削除されました！")

@@ -207,13 +207,20 @@ export class CardService implements ICardService {
     async isGameOver(gameId: string): Promise<boolean> {
         try {
             const game = await this.gameRepository.findById(gameId);
-            if (!game) return false;
+            if (!game) return true;
 
-            // 失敗数が上限に達している場合のみゲームオーバー
-            return game.failureCount >= game.hp;
+            // 失敗数が上限に達した場合のみゲームオーバー
+            if (game.failureCount >= game.hp) {
+                Logger.info(
+                    `ゲームオーバー: 失敗数上限到達 (${gameId}) - 失敗数:${game.failureCount}/${game.hp}`
+                );
+                return true;
+            }
+
+            return false;
         } catch (error) {
             Logger.error(`ゲームオーバーチェックエラー: ${error}`);
-            return false;
+            return true;
         }
     }
 
