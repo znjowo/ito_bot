@@ -1,24 +1,16 @@
 import { Collection } from "discord.js";
 import { ButtonPack, ModalPack } from "~/interfaces/IDiscord";
 import { CustomIds } from "~/interfaces/IEnum";
-import { Logger } from "~/lib/Logger";
 
 export default class InteractionManager {
     private buttons: Collection<CustomIds, ButtonPack> = new Collection();
     private modals: Collection<CustomIds, ModalPack> = new Collection();
 
     /**
-     * ボタンを登録する
-     * @param button ボタンパック
+     * ボタンを登録
      */
     public registerButton(button: ButtonPack): void {
-        if (this.buttons.has(button.id)) {
-            Logger.warn(`ボタン "${button.id}" は既に登録されています`);
-            return;
-        }
-
         this.buttons.set(button.id, button);
-        Logger.info(`ボタン "${button.id}" を登録しました`);
     }
 
     /**
@@ -30,17 +22,10 @@ export default class InteractionManager {
     }
 
     /**
-     * モーダルを登録する
-     * @param modal モーダルパック
+     * モーダルを登録
      */
     public registerModal(modal: ModalPack): void {
-        if (this.modals.has(modal.id)) {
-            Logger.warn(`モーダル "${modal.id}" は既に登録されています`);
-            return;
-        }
-
         this.modals.set(modal.id, modal);
-        Logger.info(`モーダル "${modal.id}" を登録しました`);
     }
 
     /**
@@ -52,21 +37,47 @@ export default class InteractionManager {
     }
 
     /**
-     * ボタンを取得する
-     * @param id ボタンID
+     * ボタンを取得する（プレフィックス検索対応）
+     * @param customId カスタムID
      * @returns ボタンパックまたはundefined
      */
-    public getButton(id: CustomIds): ButtonPack | undefined {
-        return this.buttons.get(id);
+    public getButton(customId: string): ButtonPack | undefined {
+        // 完全一致を先に試す
+        const exactMatch = this.buttons.get(customId as CustomIds);
+        if (exactMatch) {
+            return exactMatch;
+        }
+
+        // プレフィックス検索
+        for (const [id, button] of this.buttons) {
+            if (customId.startsWith(id)) {
+                return button;
+            }
+        }
+
+        return undefined;
     }
 
     /**
-     * モーダルを取得する
-     * @param id モーダルID
+     * モーダルを取得する（プレフィックス検索対応）
+     * @param customId カスタムID
      * @returns モーダルパックまたはundefined
      */
-    public getModal(id: CustomIds): ModalPack | undefined {
-        return this.modals.get(id);
+    public getModal(customId: string): ModalPack | undefined {
+        // 完全一致を先に試す
+        const exactMatch = this.modals.get(customId as CustomIds);
+        if (exactMatch) {
+            return exactMatch;
+        }
+
+        // プレフィックス検索
+        for (const [id, modal] of this.modals) {
+            if (customId.startsWith(id)) {
+                return modal;
+            }
+        }
+
+        return undefined;
     }
 
     /**
@@ -86,21 +97,21 @@ export default class InteractionManager {
     }
 
     /**
-     * ボタンの存在確認
-     * @param id ボタンID
+     * ボタンの存在確認（プレフィックス検索対応）
+     * @param customId カスタムID
      * @returns 存在するかどうか
      */
-    public hasButton(id: CustomIds): boolean {
-        return this.buttons.has(id);
+    public hasButton(customId: string): boolean {
+        return this.getButton(customId) !== undefined;
     }
 
     /**
-     * モーダルの存在確認
-     * @param id モーダルID
+     * モーダルの存在確認（プレフィックス検索対応）
+     * @param customId カスタムID
      * @returns 存在するかどうか
      */
-    public hasModal(id: CustomIds): boolean {
-        return this.modals.has(id);
+    public hasModal(customId: string): boolean {
+        return this.getModal(customId) !== undefined;
     }
 
     /**
@@ -119,3 +130,4 @@ export default class InteractionManager {
         return this.modals.size;
     }
 }
+ 

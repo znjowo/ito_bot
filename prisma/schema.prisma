@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// お題管理
+model Topic {
+  id          String   @id @default(cuid())
+  title       String   @db.VarChar(255)
+  description String   @db.Text
+  category    String   @db.VarChar(100)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // リレーション
+  games Game[]
+
+  @@map("topics")
+}
+
+// ゲームセッション管理
+model Game {
+  id         String      @id @default(cuid())
+  status     GameStatus  @default(WAITING)
+  minNumber  Int         @default(1)
+  maxNumber  Int         @default(100)
+  cardCount  Int         @default(1)
+  hp         Int         @default(5)
+  failureCount Int       @default(0) // 全体の失敗数
+  revealedCards String   @default("[]") // 場に出ているカード（JSON配列）
+  channelId  String      @db.VarChar(255)
+  guildId    String      @db.VarChar(255)
+  createdBy  String      @db.VarChar(255) // Discord User ID
+  createdAt  DateTime    @default(now())
+  startedAt  DateTime?
+  endedAt    DateTime?
+
+  // リレーション
+  topicId    String?
+  topic      Topic?      @relation(fields: [topicId], references: [id])
+  players    GamePlayer[]
+  cards      Card[]
+
+  @@map("games")
+}
+
+// プレイヤー情報
+model Player {
+  id         String @id @default(cuid())
+  discordId  String @unique @db.VarChar(255)
+  username   String @db.VarChar(255)
+  isActive   Boolean @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // リレーション
+  gamePlayers GamePlayer[]
+  cards       Card[]
+
+  @@map("players")
+}
+
+// ゲームとプレイヤーの関連（キュー管理）
+model GamePlayer {
+  id        String @id @default(cuid())
+  gameId    String @db.VarChar(255)
+  playerId  String @db.VarChar(255)
+  isEliminated Boolean @default(false)
+  joinedAt  DateTime @default(now())
+
+  // リレーション
+  game      Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  player    Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, playerId])
+  @@map("game_players")
+}
+
+// カード情報
+model Card {
+  id           String @id @default(cuid())
+  gameId       String @db.VarChar(255)
+  playerId     String @db.VarChar(255)
+  number       Int
+  isRevealed   Boolean @default(false)
+  isEliminated Boolean @default(false)
+  createdAt    DateTime @default(now())
+
+  // リレーション
+  game         Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  player       Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, number]) // 同じゲーム内で同じ数字のカードは存在しない
+  @@map("cards")
+}
+
+// ゲーム状態の列挙型
+enum GameStatus {
+  WAITING    // 参加者募集中
+  PLAYING    // ゲーム進行中
+  FINISHED   // ゲーム終了
+  CANCELLED  // ゲームキャンセル
+} 

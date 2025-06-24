@@ -13,4 +13,10 @@ export enum CustomIds {
 
     ModalTest = "modal_test", // モーダル
     ModalInputTest = "modal_input_test", // モーダル入力
+
+    // itoゲーム用
+    ItoJoin = "ito_join_", // 参加ボタン
+    ItoStart = "ito_start_", // 開始ボタン
+    ItoPlay = "ito_play_", // カード提示ボタン
+    ItoForceEnd = "ito_force_end", // 強制終了ボタン
 }

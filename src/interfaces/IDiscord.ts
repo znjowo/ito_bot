@@ -1,5 +1,6 @@
 import {
     ApplicationCommandSubCommandData,
+    BaseInteraction,
     ButtonInteraction,
     ChatInputApplicationCommandData,
     CommandInteraction,
@@ -42,7 +43,7 @@ export type Interactions =
 
 // インスタンス生成
 export function instance<
-    T extends new (...args: any[]) => BaseInteractionManager<Interactions>,
+    T extends new (...args: any[]) => BaseInteractionManager<BaseInteraction>,
 >(CommandType: T) {
     return (...args: ConstructorParameters<T>) => new CommandType(...args);
 }

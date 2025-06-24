@@ -1,24 +1,14 @@
 import { Collection, SlashCommandBuilder } from "discord.js";
 import { CommandPack } from "~/interfaces/IDiscord";
-import { Logger } from "~/lib/Logger";
 
 export default class CommandManager {
     private commands: Collection<string, CommandPack> = new Collection();
 
     /**
-     * コマンドを登録する
-     * @param command コマンドパック
+     * コマンドを登録
      */
     public registerCommand(command: CommandPack): void {
-        const commandName = this.getCommandName(command);
-
-        if (this.commands.has(commandName)) {
-            Logger.warn(`コマンド "${commandName}" は既に登録されています`);
-            return;
-        }
-
-        this.commands.set(commandName, command);
-        Logger.info(`コマンド "${commandName}" を登録しました`);
+        this.commands.set(command.data.name, command);
     }
 
     /**

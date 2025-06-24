@@ -9,12 +9,11 @@ import {
     TextInputBuilder,
     TextInputStyle,
 } from "discord.js";
-import { Interactions } from "~/interfaces/IDiscord";
 import { CustomIds } from "~/interfaces/IEnum";
 import BaseManager from "./BaseManager";
 
 export default class BaseInteractionManager<
-    T extends Interactions,
+    T extends BaseInteraction,
 > extends BaseManager {
     /* === Protected 変数 === */
     protected guildId: string; // サーバーID
@@ -25,7 +24,7 @@ export default class BaseInteractionManager<
     constructor(protected interaction: T) {
         super();
 
-        this.guildId = interaction.guildId;
+        this.guildId = interaction.guildId ?? "";
         this.channelId = interaction.channelId ?? "";
         this.userId = interaction.user.id;
 
@@ -70,12 +69,15 @@ export default class BaseInteractionManager<
             return;
         }
 
-        if (this.interaction.replied || this.interaction.deferred) {
-            await this.interaction.editReply(options as any).catch(() => {});
+        // 型ガードでインタラクションの種類をチェック
+        if ('replied' in this.interaction && 'deferred' in this.interaction) {
+            const interaction = this.interaction as any;
+            if (interaction.replied || interaction.deferred) {
+                await interaction.editReply(options as any).catch(() => {});
             return;
+            }
+            await interaction.reply(options).catch(() => {});
         }
-
-        await this.interaction.reply(options).catch(() => {});
     }
 
     // テストメッセージ送信
@@ -121,6 +123,9 @@ export default class BaseInteractionManager<
                 ]),
             ]); // フォーム
 
-        await this.interaction.showModal(modal);
+        // 型ガードでshowModalメソッドの存在をチェック
+        if ('showModal' in this.interaction) {
+            await (this.interaction as any).showModal(modal);
+        }
     }
 }

@@ -16,21 +16,23 @@ export default class Registry {
     }
 
     /**
-     * 全てのコマンドとインタラクションを登録する
-     * @param commands コマンドの配列
-     * @param buttons ボタンの配列
-     * @param modals モーダルの配列
+     * 全てのコンポーネントを登録
      */
-    public registerAll(
-        commands: CommandPack[],
-        buttons: ButtonPack[],
-        modals: ModalPack[]
-    ): void {
-        this.commandManager.registerCommands(commands);
-        this.interactionManager.registerButtons(buttons);
-        this.interactionManager.registerModals(modals);
+    public registerAll(commands: CommandPack[], buttons: ButtonPack[], modals: ModalPack[]): void {
+        // コマンドを登録
+        commands.forEach(command => {
+            this.commandManager.registerCommand(command);
+        });
 
-        Logger.info(`登録完了: コマンド${commands.length}個, ボタン${buttons.length}個, モーダル${modals.length}個`);
+        // ボタンを登録
+        buttons.forEach(button => {
+            this.interactionManager.registerButton(button);
+        });
+
+        // モーダルを登録
+        modals.forEach(modal => {
+            this.interactionManager.registerModal(modal);
+        });
     }
 
     /**
@@ -54,3 +56,4 @@ export default class Registry {
         return this.interactionManager;
     }
 }
+ 

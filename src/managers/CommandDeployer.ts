@@ -1,8 +1,7 @@
 import {
-    ChatInputApplicationCommandData,
     REST,
     Routes,
-    SlashCommandBuilder,
+    SlashCommandBuilder
 } from "discord.js";
 import { CommandPack } from "~/interfaces/IDiscord";
 import Config from "~/lib/Config";
@@ -49,7 +48,7 @@ export default class CommandDeployer {
      * ギルド限定でコマンドを登録する
      * @param commandData コマンドデータ
      */
-    private async deployToGuild(commandData: ChatInputApplicationCommandData[]): Promise<void> {
+    private async deployToGuild(commandData: any[]): Promise<void> {
         const guildId = this.config.getGuildId();
         if (!guildId) {
             throw new Error("ギルド限定モードですが、GUILD_IDが設定されていません");
@@ -67,7 +66,7 @@ export default class CommandDeployer {
      * グローバルでコマンドを登録する
      * @param commandData コマンドデータ
      */
-    private async deployGlobally(commandData: ChatInputApplicationCommandData[]): Promise<void> {
+    private async deployGlobally(commandData: any[]): Promise<void> {
         await this.rest.put(
             Routes.applicationCommands(this.config.getClientId()),
             { body: commandData }

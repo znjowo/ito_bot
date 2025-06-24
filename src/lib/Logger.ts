@@ -158,17 +158,17 @@ export class Logger {
         const finalMessages = this.splitMessage(combinedContent);
         
         for (const message of finalMessages) {
-            const embed = new EmbedBuilder()
+        const embed = new EmbedBuilder()
                 .setDescription(codeBlock('ansi', message))
-                .setTimestamp()
-                .setColor(color);
+            .setTimestamp()
+            .setColor(color);
 
-            this._webhook?.send({
+        this._webhook?.send({
                 embeds: [embed],
                 username: "Bot Logger",
             }).catch(() => {
                 // エラーは無視（コンソールには既に出力済み）
-            });
+        });
         }
     }
 

@@ -25,6 +25,10 @@ export default class Env {
         return this._getEnv("LOG_WEBHOOK_URL"); // ログ出力用のWebhookURL
     }
 
+    public static get databaseUrl(): string {
+        return this._getEnv("DATABASE_URL"); // データベース接続URL
+    }
+
     /* === Private 変数 === */
 
     private static _getEnv(value: string): string {

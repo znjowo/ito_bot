@@ -1,4 +1,5 @@
 import { Client, Events, IntentsBitField, Partials } from "discord.js";
+import Database from "~/lib/Database";
 import { Logger } from "~/lib/Logger";
 import CommandManager from "./CommandManager";
 import InteractionManager from "./InteractionManager";
@@ -48,14 +49,25 @@ export default class BotManager {
 
         process.on("unhandledRejection", this.onUnhandledRejection.bind(this));
         process.on("uncaughtException", this.onUncaughtException.bind(this));
+        
+        // プロセス終了時のクリーンアップ
+        process.on('SIGINT', this.onProcessExit.bind(this));
+        process.on('SIGTERM', this.onProcessExit.bind(this));
     }
 
     /**
      * クライアント準備完了時の処理
      */
-    private onClientReady(): void {
-        Logger.info(`ボット準備完了: ${this.client.user?.tag}`);
-        Logger.info(`コマンド: ${this.commandManager.getCommandCount()}, ボタン: ${this.interactionManager.getButtonCount()}, モーダル: ${this.interactionManager.getModalCount()}`);
+    private async onClientReady(): Promise<void> {
+        try {
+            // データベースに接続
+            await Database.connect();
+            
+            Logger.info(`ボット準備完了: ${this.client.user?.tag}`);
+        } catch (error) {
+            Logger.error(`データベース接続エラー: ${error}`);
+            process.exit(1);
+        }
     }
 
     /**
@@ -106,6 +118,27 @@ export default class BotManager {
         Logger.error(`未処理の例外: ${error.message}`);
         Logger.error(error.stack || "");
         process.exit(1);
+    }
+
+    /**
+     * プロセス終了時の処理
+     */
+    private async onProcessExit(): Promise<void> {
+        Logger.info('プロセス終了処理を開始します...');
+        
+        try {
+            // データベース接続を切断
+            await Database.disconnect();
+            
+            // ボットを終了
+            await this.destroy();
+            
+            Logger.info('プロセス終了処理が完了しました');
+            process.exit(0);
+        } catch (error) {
+            Logger.error(`プロセス終了処理エラー: ${error}`);
+            process.exit(1);
+        }
     }
 
     /**
@@ -162,3 +195,4 @@ export default class BotManager {
         return this.client;
     }
 }
+ 

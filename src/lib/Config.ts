@@ -129,3 +129,4 @@ export default class Config {
         return this.get<number>("bot.maxRetries") || 3;
     }
 }
+ 
