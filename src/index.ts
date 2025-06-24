@@ -1,27 +1,101 @@
-import { Client, Events, IntentsBitField, Partials } from "discord.js";
-import clientReady from "./handlers/clientReady";
-import errorHandler from "./handlers/errorHandler";
-import interactionCreate from "./handlers/interactionCreates";
-import Env from "./lib/Env";
+import { Client, GatewayIntentBits } from "discord.js";
+import buttons from "./interactions/buttons";
+import commands from "./interactions/commands";
+import modals from "./interactions/modals";
+import Config from "./lib/Config";
+import ErrorHandler from "./lib/ErrorHandler";
 import { Logger } from "./lib/Logger";
+import BotManager from "./managers/BotManager";
+import CommandDeployer from "./managers/CommandDeployer";
+import Registry from "./managers/Registry";
 
-export const client = new Client({
+let botManager: BotManager;
+let isShuttingDown = false;
+
+// クライアントの作成
+const client = new Client({
     intents: [
-        IntentsBitField.Flags.MessageContent,
-        IntentsBitField.Flags.Guilds,
-        IntentsBitField.Flags.GuildMembers,
-        IntentsBitField.Flags.GuildMessages,
-        IntentsBitField.Flags.GuildMessageReactions,
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
     ],
-    partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
 
-client.once(Events.ClientReady, clientReady); // クライアントが準備完了したとき
-client.on(Events.InteractionCreate, interactionCreate); // インタラクションが作成されたとき
+// エラーハンドラーの設定
+const errorHandler = ErrorHandler.getInstance();
 
-process.on("unhandledRejection", reason =>
-    Logger.error(`# UnhandledRejection:\n>>> ${reason}`)
-); // 未処理のPromiseが拒否されたとき
-process.on("uncaughtException", errorHandler); // 未処理のエラーが発生したとき
+async function main(): Promise<void> {
+    try {
+        const config = Config.getInstance();
+        botManager = new BotManager();
+        const commandDeployer = new CommandDeployer();
 
-client.login(Env.token); // Botをログインさせる
+        // レジストリの初期化
+        const registry = new Registry(
+            botManager.getCommandManager(),
+            botManager.getInteractionManager()
+        );
+        
+        registry.registerAll(commands, buttons, modals);
+        registry.showRegistryStatus();
+
+        await commandDeployer.deployCommands(commands);
+        await botManager.login(config.getDiscordToken());
+
+        Logger.success("ボットが正常に起動しました！");
+    } catch (error) {
+        Logger.error(`ボット起動エラー: ${error}`);
+        process.exit(1);
+    }
+}
+
+async function cleanup(): Promise<void> {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+
+    try {
+        Logger.info("クリーンアップを開始...");
+        
+        if (botManager) {
+            await botManager.destroy();
+        }
+
+        // ログバッファをフラッシュ
+        Logger.flushBuffer();
+        
+        Logger.info("クリーンアップ完了");
+        process.exit(0);
+    } catch (error) {
+        Logger.error(`クリーンアップエラー: ${error}`);
+        process.exit(1);
+    }
+}
+
+process.on('SIGINT', async () => {
+    Logger.info('シャットダウンシグナルを受信しました...');
+    await cleanup();
+});
+
+process.on('SIGTERM', async () => {
+    Logger.info('終了シグナルを受信しました...');
+    await cleanup();
+});
+
+process.on('uncaughtException', async (error) => {
+    Logger.error(`未処理の例外: ${error.message}`);
+    Logger.error(`スタックトレース: ${error.stack}`);
+    if (!isShuttingDown) {
+        await cleanup();
+    }
+});
+
+process.on('unhandledRejection', async (reason, promise) => {
+    Logger.error(`未処理のPromise拒否: ${reason}`);
+    Logger.error(`Promise: ${promise}`);
+    if (!isShuttingDown) {
+        await cleanup();
+    }
+});
+
+// ボットを起動
+main();
