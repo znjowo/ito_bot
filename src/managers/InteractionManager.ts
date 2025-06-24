@@ -130,4 +130,3 @@ export default class InteractionManager {
         return this.modals.size;
     }
 }
- 

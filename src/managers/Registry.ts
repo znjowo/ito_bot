@@ -18,7 +18,11 @@ export default class Registry {
     /**
      * 全てのコンポーネントを登録
      */
-    public registerAll(commands: CommandPack[], buttons: ButtonPack[], modals: ModalPack[]): void {
+    public registerAll(
+        commands: CommandPack[],
+        buttons: ButtonPack[],
+        modals: ModalPack[]
+    ): void {
         // コマンドを登録
         commands.forEach(command => {
             this.commandManager.registerCommand(command);
@@ -39,7 +43,9 @@ export default class Registry {
      * 登録状況を表示する
      */
     public showRegistryStatus(): void {
-        Logger.info(`登録状況: コマンド${this.commandManager.getCommandCount()}個, ボタン${this.interactionManager.getButtonCount()}個, モーダル${this.interactionManager.getModalCount()}個`);
+        Logger.info(
+            `登録状況: コマンド${this.commandManager.getCommandCount()}個, ボタン${this.interactionManager.getButtonCount()}個, モーダル${this.interactionManager.getModalCount()}個`
+        );
     }
 
     /**
@@ -56,4 +62,3 @@ export default class Registry {
         return this.interactionManager;
     }
 }
- 

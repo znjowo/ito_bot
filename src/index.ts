@@ -35,7 +35,7 @@ async function main(): Promise<void> {
             botManager.getCommandManager(),
             botManager.getInteractionManager()
         );
-        
+
         registry.registerAll(commands, buttons, modals);
         registry.showRegistryStatus();
 
@@ -55,14 +55,14 @@ async function cleanup(): Promise<void> {
 
     try {
         Logger.info("クリーンアップを開始...");
-        
+
         if (botManager) {
             await botManager.destroy();
         }
 
         // ログバッファをフラッシュ
         Logger.flushBuffer();
-        
+
         Logger.info("クリーンアップ完了");
         process.exit(0);
     } catch (error) {
@@ -71,17 +71,17 @@ async function cleanup(): Promise<void> {
     }
 }
 
-process.on('SIGINT', async () => {
-    Logger.info('シャットダウンシグナルを受信しました...');
+process.on("SIGINT", async () => {
+    Logger.info("シャットダウンシグナルを受信しました...");
     await cleanup();
 });
 
-process.on('SIGTERM', async () => {
-    Logger.info('終了シグナルを受信しました...');
+process.on("SIGTERM", async () => {
+    Logger.info("終了シグナルを受信しました...");
     await cleanup();
 });
 
-process.on('uncaughtException', async (error) => {
+process.on("uncaughtException", async error => {
     Logger.error(`未処理の例外: ${error.message}`);
     Logger.error(`スタックトレース: ${error.stack}`);
     if (!isShuttingDown) {
@@ -89,7 +89,7 @@ process.on('uncaughtException', async (error) => {
     }
 });
 
-process.on('unhandledRejection', async (reason, promise) => {
+process.on("unhandledRejection", async (reason, promise) => {
     Logger.error(`未処理のPromise拒否: ${reason}`);
     Logger.error(`Promise: ${promise}`);
     if (!isShuttingDown) {

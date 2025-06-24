@@ -35,7 +35,9 @@ async function deleteCommand(commandName: string): Promise<void> {
         Logger.info(`コマンド "${commandName}" を削除しました`);
         process.exit(0);
     } catch (error) {
-        Logger.error(`コマンド "${commandName}" の削除に失敗しました: ${error}`);
+        Logger.error(
+            `コマンド "${commandName}" の削除に失敗しました: ${error}`
+        );
         process.exit(1);
     }
 }
@@ -43,8 +45,9 @@ async function deleteCommand(commandName: string): Promise<void> {
 async function listCommands(): Promise<void> {
     try {
         Logger.info("登録されているコマンドを取得します...");
-        const registeredCommands = await commandDeployer.getRegisteredCommands();
-        
+        const registeredCommands =
+            await commandDeployer.getRegisteredCommands();
+
         if (registeredCommands.length === 0) {
             Logger.info("登録されているコマンドはありません");
         } else {
@@ -85,8 +88,14 @@ switch (command) {
     default:
         Logger.info("使用方法:");
         Logger.info("  npm run deploy-commands deploy     - コマンドを登録");
-        Logger.info("  npm run deploy-commands delete-all - 全てのコマンドを削除");
-        Logger.info("  npm run deploy-commands delete <name> - 特定のコマンドを削除");
-        Logger.info("  npm run deploy-commands list       - 登録されているコマンドを表示");
+        Logger.info(
+            "  npm run deploy-commands delete-all - 全てのコマンドを削除"
+        );
+        Logger.info(
+            "  npm run deploy-commands delete <name> - 特定のコマンドを削除"
+        );
+        Logger.info(
+            "  npm run deploy-commands list       - 登録されているコマンドを表示"
+        );
         process.exit(0);
-} 
+}

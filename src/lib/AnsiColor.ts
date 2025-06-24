@@ -1,8 +1,8 @@
 // ANSIエスケープシーケンスの定数
 const ANSI = {
-    RESET: '\u001b[0m',
-    START: '\u001b[',
-    END: 'm',
+    RESET: "\u001b[0m",
+    START: "\u001b[",
+    END: "m",
 } as const;
 
 // スタイルの定義
@@ -67,14 +67,20 @@ export default class AnsiColor {
     /**
      * ANSIエスケープシーケンスでテキストを装飾する
      */
-    public format({ text, style = 'NORMAL', color = 'WHITE', bg = null }: AnsiOptions): string {
+    public format({
+        text,
+        style = "NORMAL",
+        color = "WHITE",
+        bg = null,
+    }: AnsiOptions): string {
         const styleCode = STYLE[style] ?? STYLE.NORMAL;
         const colorCode = TEXT_COLOR[color] ?? TEXT_COLOR.WHITE;
         const bgCode = bg ? (BG_COLOR[bg] ?? BG_COLOR.DARKBLUE) : null;
 
-        const code = bgCode != null 
-            ? `${styleCode};${colorCode};${bgCode}` 
-            : `${styleCode};${colorCode}`;
+        const code =
+            bgCode != null
+                ? `${styleCode};${colorCode};${bgCode}`
+                : `${styleCode};${colorCode}`;
 
         return `${ANSI.START}${code}${ANSI.END}${text}${ANSI.RESET}`;
     }
@@ -83,42 +89,42 @@ export default class AnsiColor {
      * エラーメッセージ用の装飾
      */
     public error(text: string): string {
-        return this.format({ text, style: 'BOLD', color: 'RED' });
+        return this.format({ text, style: "BOLD", color: "RED" });
     }
 
     /**
      * 警告メッセージ用の装飾
      */
     public warn(text: string): string {
-        return this.format({ text, style: 'BOLD', color: 'YELLOW' });
+        return this.format({ text, style: "BOLD", color: "YELLOW" });
     }
 
     /**
      * 情報メッセージ用の装飾
      */
     public info(text: string): string {
-        return this.format({ text, style: 'NORMAL', color: 'CYAN' });
+        return this.format({ text, style: "NORMAL", color: "CYAN" });
     }
 
     /**
      * 成功メッセージ用の装飾
      */
     public success(text: string): string {
-        return this.format({ text, style: 'BOLD', color: 'GREEN' });
+        return this.format({ text, style: "BOLD", color: "GREEN" });
     }
 
     /**
      * デバッグメッセージ用の装飾
      */
     public debug(text: string): string {
-        return this.format({ text, style: 'DIM', color: 'GRAY' });
+        return this.format({ text, style: "DIM", color: "GRAY" });
     }
 
     /**
      * タイムスタンプ用の装飾
      */
     public timestamp(text: string): string {
-        return this.format({ text, style: 'DIM', color: 'WHITE' });
+        return this.format({ text, style: "DIM", color: "WHITE" });
     }
 
     /**
@@ -126,28 +132,33 @@ export default class AnsiColor {
      */
     public level(level: string): string {
         const colorMap: Record<string, TextColor> = {
-            'ERROR': 'RED',
-            'WARN': 'YELLOW',
-            'INFO': 'CYAN',
-            'DEBUG': 'GRAY',
-            'SUCCESS': 'GREEN'
+            ERROR: "RED",
+            WARN: "YELLOW",
+            INFO: "CYAN",
+            DEBUG: "GRAY",
+            SUCCESS: "GREEN",
         };
 
-        const color = colorMap[level] || 'WHITE';
-        return this.format({ text: level, style: 'BOLD', color });
+        const color = colorMap[level] || "WHITE";
+        return this.format({ text: level, style: "BOLD", color });
     }
 
     /**
      * 強調表示用の装飾
      */
     public highlight(text: string): string {
-        return this.format({ text, style: 'BOLD', color: 'PINK' });
+        return this.format({ text, style: "BOLD", color: "PINK" });
     }
 
     /**
      * コード表示用の装飾
      */
     public code(text: string): string {
-        return this.format({ text, style: 'NORMAL', color: 'BLUE', bg: 'LIGHTGRAY' });
+        return this.format({
+            text,
+            style: "NORMAL",
+            color: "BLUE",
+            bg: "LIGHTGRAY",
+        });
     }
-} 
+}

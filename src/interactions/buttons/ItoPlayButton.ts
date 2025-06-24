@@ -11,8 +11,11 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
     protected async main(): Promise<void> {
         try {
             // カスタムIDからゲームIDを抽出
-            const gameId = this.interaction.customId.replace(CustomIds.ItoPlay, "");
-            
+            const gameId = this.interaction.customId.replace(
+                CustomIds.ItoPlay,
+                ""
+            );
+
             // ゲーム情報を取得
             const game = await GameManager.getGameWithRelations(gameId);
             if (!game) {
@@ -33,7 +36,10 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
             }
 
             // プレイヤーがゲームオーバーかチェック
-            const isGameOver = await CardManager.isPlayerGameOver(gameId, this.interaction.user.id);
+            const isGameOver = await CardManager.isPlayerGameOver(
+                gameId,
+                this.interaction.user.id
+            );
             if (isGameOver) {
                 await this.interaction.reply({
                     content: "あなたは既にゲームオーバーです。",
@@ -43,7 +49,10 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
             }
 
             // カードを提示
-            const card = await CardManager.playCard(gameId, this.interaction.user.id);
+            const card = await CardManager.playCard(
+                gameId,
+                this.interaction.user.id
+            );
             if (!card) {
                 await this.interaction.reply({
                     content: "提示できるカードがありません。",
@@ -54,7 +63,11 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
 
             // 他のプレイヤーのカードと比較
             const otherCards = await CardManager.getRemainingCardCount(gameId);
-            const isCorrect = await CardManager.isCorrectCard(gameId, card.number, this.interaction.user.id);
+            const isCorrect = await CardManager.isCorrectCard(
+                gameId,
+                card.number,
+                this.interaction.user.id
+            );
 
             // 結果を判定
             if (isCorrect) {
@@ -64,7 +77,6 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
                 // 不正解の場合、失敗処理
                 await this.handleFailure(gameId, card, game);
             }
-
         } catch (error) {
             Logger.error(`itoカード提示ボタンエラー: ${error}`);
             await this.interaction.reply({
@@ -77,7 +89,10 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
     /**
      * ゲーム募集メッセージを更新
      */
-    private async updateGameMessage(gameId: string, embed: EmbedBuilder): Promise<void> {
+    private async updateGameMessage(
+        gameId: string,
+        embed: EmbedBuilder
+    ): Promise<void> {
         try {
             const gameMessage = await GameManager.getGameMessage(gameId);
             if (!gameMessage) {
@@ -89,7 +104,9 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
             }
 
             // チャンネルを取得
-            const channel = await this.interaction.client.channels.fetch(gameMessage.channelId);
+            const channel = await this.interaction.client.channels.fetch(
+                gameMessage.channelId
+            );
             if (!channel?.isTextBased()) {
                 await this.interaction.reply({
                     content: "チャンネルが見つかりません。",
@@ -117,7 +134,11 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
     /**
      * 成功時の処理
      */
-    private async handleSuccess(gameId: string, card: any, game: any): Promise<void> {
+    private async handleSuccess(
+        gameId: string,
+        card: any,
+        game: any
+    ): Promise<void> {
         // 成功処理（場にカードを追加）
         await CardManager.handleCardSuccess(gameId, card.number);
 
@@ -126,19 +147,41 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
         if (!updatedGame) return;
 
         // 場のカードを取得
-        const revealedCards = await CardManager.getRevealedCardsWithPlayers(gameId);
-        const revealedCardsText = revealedCards.length > 0 
-            ? revealedCards.map(card => `**${card.playerName}**: ${card.number}`).join("\n")
-            : "なし";
+        const revealedCards =
+            await CardManager.getRevealedCardsWithPlayers(gameId);
+        const revealedCardsText =
+            revealedCards.length > 0
+                ? revealedCards
+                      .map(card => `**${card.playerName}**: ${card.number}`)
+                      .join("\n")
+                : "なし";
 
         const embed = new EmbedBuilder()
             .setTitle("✅ カード提示成功！")
-            .setDescription(`${this.interaction.user} が **${card.number}** を提示しました`)
+            .setDescription(
+                `${this.interaction.user} が **${card.number}** を提示しました`
+            )
             .addFields(
-                { name: "🎯 結果", value: "正解でした！場にカードを追加", inline: true },
-                { name: "👤 プレイヤー", value: this.interaction.user.username, inline: true },
-                { name: "💔 失敗数", value: `${updatedGame.failureCount}/${updatedGame.hp}`, inline: true },
-                { name: "🃏 場のカード", value: revealedCardsText, inline: false }
+                {
+                    name: "🎯 結果",
+                    value: "正解でした！場にカードを追加",
+                    inline: true,
+                },
+                {
+                    name: "👤 プレイヤー",
+                    value: this.interaction.user.username,
+                    inline: true,
+                },
+                {
+                    name: "💔 失敗数",
+                    value: `${updatedGame.failureCount}/${updatedGame.hp}`,
+                    inline: true,
+                },
+                {
+                    name: "🃏 場のカード",
+                    value: revealedCardsText,
+                    inline: false,
+                }
             )
             .setColor(0x00ff00)
             .setTimestamp()
@@ -147,20 +190,24 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
         // ゲームクリアかチェック
         const isGameClear = await CardManager.isGameClear(gameId);
         if (isGameClear) {
-            embed.setTitle("🎉 ゲームクリア！")
+            embed
+                .setTitle("🎉 ゲームクリア！")
                 .setDescription("全員が手札を出し切りました！")
                 .setColor(0xffd700);
 
             // 全カードを開示
             const allCards = await CardManager.revealAllCards(gameId);
-            const playerCards = new Map<string, { username: string; cards: number[] }>();
-            
+            const playerCards = new Map<
+                string,
+                { username: string; cards: number[] }
+            >();
+
             for (const cardData of allCards) {
                 const key = cardData.player.discordId;
                 if (!playerCards.has(key)) {
                     playerCards.set(key, {
                         username: cardData.player.username,
-                        cards: []
+                        cards: [],
                     });
                 }
                 playerCards.get(key)!.cards.push(cardData.number);
@@ -168,12 +215,14 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
 
             for (const [discordId, playerData] of playerCards) {
                 const sortedCards = playerData.cards.sort((a, b) => a - b);
-                const cardList = sortedCards.map(num => `**${num}**`).join(", ");
-                
+                const cardList = sortedCards
+                    .map(num => `**${num}**`)
+                    .join(", ");
+
                 embed.addFields({
                     name: `👤 ${playerData.username}`,
                     value: `カード: ${cardList}`,
-                    inline: false
+                    inline: false,
                 });
             }
 
@@ -188,9 +237,17 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
     /**
      * 失敗時の処理
      */
-    private async handleFailure(gameId: string, card: any, game: any): Promise<void> {
+    private async handleFailure(
+        gameId: string,
+        card: any,
+        game: any
+    ): Promise<void> {
         // 失敗処理（全体の失敗数カウントとカード削除）
-        await CardManager.handleCardFailure(gameId, this.interaction.user.id, card.number);
+        await CardManager.handleCardFailure(
+            gameId,
+            this.interaction.user.id,
+            card.number
+        );
 
         // 更新されたゲーム情報を取得
         const updatedGame = await GameManager.getGameWithRelations(gameId);
@@ -200,19 +257,37 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
         const isGameOver = await CardManager.isGameOver(gameId);
 
         // 場のカードを取得
-        const revealedCards = await CardManager.getRevealedCardsWithPlayers(gameId);
-        const revealedCardsText = revealedCards.length > 0 
-            ? revealedCards.map(card => `**${card.playerName}**: ${card.number}`).join("\n")
-            : "なし";
+        const revealedCards =
+            await CardManager.getRevealedCardsWithPlayers(gameId);
+        const revealedCardsText =
+            revealedCards.length > 0
+                ? revealedCards
+                      .map(card => `**${card.playerName}**: ${card.number}`)
+                      .join("\n")
+                : "なし";
 
         const embed = new EmbedBuilder()
             .setTitle("❌ カード提示失敗！")
-            .setDescription(`${this.interaction.user} が **${card.number}** を提示しました`)
+            .setDescription(
+                `${this.interaction.user} が **${card.number}** を提示しました`
+            )
             .addFields(
                 { name: "🎯 結果", value: "不正解でした", inline: true },
-                { name: "👤 プレイヤー", value: this.interaction.user.username, inline: true },
-                { name: "💔 失敗数", value: `${updatedGame.failureCount}/${updatedGame.hp}`, inline: true },
-                { name: "🃏 場のカード", value: revealedCardsText, inline: false }
+                {
+                    name: "👤 プレイヤー",
+                    value: this.interaction.user.username,
+                    inline: true,
+                },
+                {
+                    name: "💔 失敗数",
+                    value: `${updatedGame.failureCount}/${updatedGame.hp}`,
+                    inline: true,
+                },
+                {
+                    name: "🃏 場のカード",
+                    value: revealedCardsText,
+                    inline: false,
+                }
             )
             .setColor(0xff0000)
             .setTimestamp()
@@ -220,32 +295,38 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
 
         if (isGameOver) {
             // ゲームオーバーの原因を判定
-            const remainingCards = await CardManager.getRemainingCardCount(gameId);
-            
+            const remainingCards =
+                await CardManager.getRemainingCardCount(gameId);
+
             if (remainingCards === 0) {
-                embed.setTitle("💀 ゲームオーバー！")
+                embed
+                    .setTitle("💀 ゲームオーバー！")
                     .setDescription("カードが全部削除されました！")
                     .setColor(0x8b0000);
             } else {
-                embed.setTitle("💀 ゲームオーバー！")
+                embed
+                    .setTitle("💀 ゲームオーバー！")
                     .setDescription("全体の失敗数が上限に達しました！")
                     .setColor(0x8b0000);
             }
 
             // 全カードを開示
             const allCards = await CardManager.revealAllCards(gameId);
-            const playerCards = new Map<string, { username: string; cards: number[]; eliminatedCards: number[] }>();
-            
+            const playerCards = new Map<
+                string,
+                { username: string; cards: number[]; eliminatedCards: number[] }
+            >();
+
             for (const cardData of allCards) {
                 const key = cardData.player.discordId;
                 if (!playerCards.has(key)) {
                     playerCards.set(key, {
                         username: cardData.player.username,
                         cards: [],
-                        eliminatedCards: []
+                        eliminatedCards: [],
                     });
                 }
-                
+
                 if (cardData.isEliminated) {
                     playerCards.get(key)!.eliminatedCards.push(cardData.number);
                 } else {
@@ -257,29 +338,29 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
                 const activeCards = playerData.cards
                     .sort((a, b) => a - b)
                     .map(num => `**${num}**`)
-                    .join(', ');
-                
+                    .join(", ");
+
                 const eliminatedCards = playerData.eliminatedCards
                     .sort((a, b) => a - b)
                     .map(num => `~~${num}~~`)
-                    .join(', ');
-                
-                let cardDisplay = '';
+                    .join(", ");
+
+                let cardDisplay = "";
                 if (activeCards) {
                     cardDisplay += `**手札**: ${activeCards}`;
                 }
                 if (eliminatedCards) {
-                    if (cardDisplay) cardDisplay += '\n';
+                    if (cardDisplay) cardDisplay += "\n";
                     cardDisplay += `**削除済み**: ${eliminatedCards}`;
                 }
                 if (!cardDisplay) {
-                    cardDisplay = 'カードなし';
+                    cardDisplay = "カードなし";
                 }
-                
+
                 embed.addFields({
                     name: `👤 ${playerData.username}`,
                     value: cardDisplay,
-                    inline: false
+                    inline: false,
                 });
             }
 
@@ -297,4 +378,4 @@ const itoPlayButton: ButtonPack = {
     instance: instance(ItoPlayButton),
 };
 
-export default itoPlayButton; 
+export default itoPlayButton;

@@ -15,8 +15,11 @@ class ItoJoinButton extends BaseInteractionManager<ButtonInteraction> {
     protected async main(): Promise<void> {
         try {
             // カスタムIDからゲームIDを抽出
-            const gameId = this.interaction.customId.replace(CustomIds.ItoJoin, "");
-            
+            const gameId = this.interaction.customId.replace(
+                CustomIds.ItoJoin,
+                ""
+            );
+
             // ゲーム情報を取得
             const game = await GameManager.getGameWithRelations(gameId);
             if (!game) {
@@ -74,22 +77,24 @@ class ItoJoinButton extends BaseInteractionManager<ButtonInteraction> {
             // 埋め込みメッセージを更新
             const embed = new EmbedBuilder()
                 .setTitle("🎮 itoゲーム募集")
-                .setDescription(`${updatedGame.createdBy === this.interaction.user.id ? this.interaction.user : `<@${updatedGame.createdBy}>`} がitoゲームを開始しました！`)
+                .setDescription(
+                    `${updatedGame.createdBy === this.interaction.user.id ? this.interaction.user : `<@${updatedGame.createdBy}>`} がitoゲームを開始しました！`
+                )
                 .addFields(
-                    { 
-                        name: "📊 設定", 
-                        value: `数字範囲: ${updatedGame.minNumber}-${updatedGame.maxNumber}\nカード枚数: ${updatedGame.cardCount}枚\nライフ: ${updatedGame.hp}`, 
-                        inline: true 
+                    {
+                        name: "📊 設定",
+                        value: `数字範囲: ${updatedGame.minNumber}-${updatedGame.maxNumber}\nカード枚数: ${updatedGame.cardCount}枚\nライフ: ${updatedGame.hp}`,
+                        inline: true,
                     },
-                    { 
-                        name: "👥 参加者", 
-                        value: `${updatedGame.players.length}人`, 
-                        inline: true 
+                    {
+                        name: "👥 参加者",
+                        value: `${updatedGame.players.length}人`,
+                        inline: true,
                     },
-                    { 
-                        name: "📋 参加者リスト", 
-                        value: playerList, 
-                        inline: false 
+                    {
+                        name: "📋 参加者リスト",
+                        value: playerList,
+                        inline: false,
                     }
                 )
                 .setColor(0x00ff00)
@@ -97,8 +102,8 @@ class ItoJoinButton extends BaseInteractionManager<ButtonInteraction> {
 
             // ボタンを更新（最低2人で開始可能）
             const canStart = updatedGame.players.length >= 2;
-            const joinButton = new ActionRowBuilder<ButtonBuilder>()
-                .addComponents(
+            const joinButton =
+                new ActionRowBuilder<ButtonBuilder>().addComponents(
                     new ButtonBuilder()
                         .setCustomId(`${CustomIds.ItoJoin}${gameId}`)
                         .setLabel("参加する")
@@ -117,8 +122,9 @@ class ItoJoinButton extends BaseInteractionManager<ButtonInteraction> {
                 components: [joinButton],
             });
 
-            Logger.info(`プレイヤーが参加しました: ${this.interaction.user.username} (${gameId})`);
-
+            Logger.info(
+                `プレイヤーが参加しました: ${this.interaction.user.username} (${gameId})`
+            );
         } catch (error) {
             Logger.error(`ito参加ボタンエラー: ${error}`);
             await this.interaction.reply({
@@ -134,4 +140,4 @@ const itoJoinButton: ButtonPack = {
     instance: instance(ItoJoinButton),
 };
 
-export default itoJoinButton; 
+export default itoJoinButton;

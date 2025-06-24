@@ -1,8 +1,4 @@
-import {
-    REST,
-    Routes,
-    SlashCommandBuilder
-} from "discord.js";
+import { REST, Routes, SlashCommandBuilder } from "discord.js";
 import { CommandPack } from "~/interfaces/IDiscord";
 import Config from "~/lib/Config";
 import { Logger } from "~/lib/Logger";
@@ -13,7 +9,9 @@ export default class CommandDeployer {
 
     constructor() {
         this.config = Config.getInstance();
-        this.rest = new REST({ version: "10" }).setToken(this.config.getDiscordToken());
+        this.rest = new REST({ version: "10" }).setToken(
+            this.config.getDiscordToken()
+        );
     }
 
     /**
@@ -51,7 +49,9 @@ export default class CommandDeployer {
     private async deployToGuild(commandData: any[]): Promise<void> {
         const guildId = this.config.getGuildId();
         if (!guildId) {
-            throw new Error("ギルド限定モードですが、GUILD_IDが設定されていません");
+            throw new Error(
+                "ギルド限定モードですが、GUILD_IDが設定されていません"
+            );
         }
 
         await this.rest.put(
@@ -59,7 +59,9 @@ export default class CommandDeployer {
             { body: commandData }
         );
 
-        Logger.info(`ギルド限定でコマンドを登録しました (Guild ID: ${guildId})`);
+        Logger.info(
+            `ギルド限定でコマンドを登録しました (Guild ID: ${guildId})`
+        );
     }
 
     /**
@@ -99,7 +101,9 @@ export default class CommandDeployer {
     private async deleteGuildCommands(): Promise<void> {
         const guildId = this.config.getGuildId();
         if (!guildId) {
-            throw new Error("ギルド限定モードですが、GUILD_IDが設定されていません");
+            throw new Error(
+                "ギルド限定モードですが、GUILD_IDが設定されていません"
+            );
         }
 
         await this.rest.put(
@@ -136,7 +140,9 @@ export default class CommandDeployer {
 
             Logger.info(`コマンド "${commandName}" を削除しました`);
         } catch (error) {
-            Logger.error(`コマンド "${commandName}" の削除に失敗しました: ${error}`);
+            Logger.error(
+                `コマンド "${commandName}" の削除に失敗しました: ${error}`
+            );
             throw error;
         }
     }
@@ -148,16 +154,20 @@ export default class CommandDeployer {
     private async deleteGuildCommand(commandName: string): Promise<void> {
         const guildId = this.config.getGuildId();
         if (!guildId) {
-            throw new Error("ギルド限定モードですが、GUILD_IDが設定されていません");
+            throw new Error(
+                "ギルド限定モードですが、GUILD_IDが設定されていません"
+            );
         }
 
         // まず既存のコマンドを取得
-        const commands = await this.rest.get(
+        const commands = (await this.rest.get(
             Routes.applicationGuildCommands(this.config.getClientId(), guildId)
-        ) as any[];
+        )) as any[];
 
         // 指定されたコマンドを除外
-        const filteredCommands = commands.filter(cmd => cmd.name !== commandName);
+        const filteredCommands = commands.filter(
+            cmd => cmd.name !== commandName
+        );
 
         // 更新されたコマンドリストを登録
         await this.rest.put(
@@ -172,12 +182,14 @@ export default class CommandDeployer {
      */
     private async deleteGlobalCommand(commandName: string): Promise<void> {
         // まず既存のコマンドを取得
-        const commands = await this.rest.get(
+        const commands = (await this.rest.get(
             Routes.applicationCommands(this.config.getClientId())
-        ) as any[];
+        )) as any[];
 
         // 指定されたコマンドを除外
-        const filteredCommands = commands.filter(cmd => cmd.name !== commandName);
+        const filteredCommands = commands.filter(
+            cmd => cmd.name !== commandName
+        );
 
         // 更新されたコマンドリストを登録
         await this.rest.put(
@@ -208,20 +220,22 @@ export default class CommandDeployer {
     private async getGuildCommands(): Promise<any[]> {
         const guildId = this.config.getGuildId();
         if (!guildId) {
-            throw new Error("ギルド限定モードですが、GUILD_IDが設定されていません");
+            throw new Error(
+                "ギルド限定モードですが、GUILD_IDが設定されていません"
+            );
         }
 
-        return await this.rest.get(
+        return (await this.rest.get(
             Routes.applicationGuildCommands(this.config.getClientId(), guildId)
-        ) as any[];
+        )) as any[];
     }
 
     /**
      * グローバルコマンドを取得する
      */
     private async getGlobalCommands(): Promise<any[]> {
-        return await this.rest.get(
+        return (await this.rest.get(
             Routes.applicationCommands(this.config.getClientId())
-        ) as any[];
+        )) as any[];
     }
-} 
+}

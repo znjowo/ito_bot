@@ -70,11 +70,11 @@ export default class BaseInteractionManager<
         }
 
         // 型ガードでインタラクションの種類をチェック
-        if ('replied' in this.interaction && 'deferred' in this.interaction) {
+        if ("replied" in this.interaction && "deferred" in this.interaction) {
             const interaction = this.interaction as any;
             if (interaction.replied || interaction.deferred) {
                 await interaction.editReply(options as any).catch(() => {});
-            return;
+                return;
             }
             await interaction.reply(options).catch(() => {});
         }
@@ -124,7 +124,7 @@ export default class BaseInteractionManager<
             ]); // フォーム
 
         // 型ガードでshowModalメソッドの存在をチェック
-        if ('showModal' in this.interaction) {
+        if ("showModal" in this.interaction) {
             await (this.interaction as any).showModal(modal);
         }
     }

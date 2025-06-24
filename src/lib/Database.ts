@@ -1,5 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-import { Logger } from './Logger';
+import { PrismaClient } from "@prisma/client";
+import { Logger } from "./Logger";
 
 class Database {
     private static instance: PrismaClient;
@@ -16,7 +16,7 @@ class Database {
         try {
             const prisma = Database.getInstance();
             await prisma.$connect();
-            Logger.info('データベースに接続しました');
+            Logger.info("データベースに接続しました");
         } catch (error) {
             Logger.error(`データベース接続エラー: ${error}`);
             throw error;
@@ -27,7 +27,7 @@ class Database {
         try {
             const prisma = Database.getInstance();
             await prisma.$disconnect();
-            Logger.info('データベース接続を切断しました');
+            Logger.info("データベース接続を切断しました");
         } catch (error) {
             Logger.error(`データベース切断エラー: ${error}`);
             throw error;
@@ -35,4 +35,4 @@ class Database {
     }
 }
 
-export default Database; 
+export default Database;

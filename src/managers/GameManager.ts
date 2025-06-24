@@ -1,6 +1,13 @@
-import { Card, Game, GamePlayer, GameStatus, Player, Topic } from '@prisma/client';
-import Database from '../lib/Database';
-import { Logger } from '../lib/Logger';
+import {
+    Card,
+    Game,
+    GamePlayer,
+    GameStatus,
+    Player,
+    Topic,
+} from "@prisma/client";
+import Database from "../lib/Database";
+import { Logger } from "../lib/Logger";
 
 interface CreateGameOptions {
     channelId: string;
@@ -31,14 +38,20 @@ export default class GameManager {
     /**
      * ゲームメッセージ情報を保存
      */
-    public static async saveGameMessage(gameId: string, messageId: string, channelId: string): Promise<void> {
+    public static async saveGameMessage(
+        gameId: string,
+        messageId: string,
+        channelId: string
+    ): Promise<void> {
         this.gameMessages.set(gameId, { gameId, messageId, channelId });
     }
 
     /**
      * ゲームメッセージ情報を取得
      */
-    public static async getGameMessage(gameId: string): Promise<GameMessageInfo | null> {
+    public static async getGameMessage(
+        gameId: string
+    ): Promise<GameMessageInfo | null> {
         return this.gameMessages.get(gameId) || null;
     }
 
@@ -78,7 +91,11 @@ export default class GameManager {
     /**
      * ゲームに参加者を追加
      */
-    public static async joinGame(gameId: string, discordId: string, username: string): Promise<GamePlayer> {
+    public static async joinGame(
+        gameId: string,
+        discordId: string,
+        username: string
+    ): Promise<GamePlayer> {
         try {
             // プレイヤーを取得または作成
             let player = await this.prisma.player.findUnique({
@@ -102,7 +119,9 @@ export default class GameManager {
                 },
             });
 
-            Logger.info(`プレイヤーがゲームに参加しました: ${username} (${gameId})`);
+            Logger.info(
+                `プレイヤーがゲームに参加しました: ${username} (${gameId})`
+            );
             return gamePlayer;
         } catch (error) {
             Logger.error(`ゲーム参加エラー: ${error}`);
@@ -113,14 +132,17 @@ export default class GameManager {
     /**
      * ゲームから参加者を削除
      */
-    public static async leaveGame(gameId: string, discordId: string): Promise<void> {
+    public static async leaveGame(
+        gameId: string,
+        discordId: string
+    ): Promise<void> {
         try {
             const player = await this.prisma.player.findUnique({
                 where: { discordId },
             });
 
             if (!player) {
-                throw new Error('プレイヤーが見つかりません');
+                throw new Error("プレイヤーが見つかりません");
             }
 
             await this.prisma.gamePlayer.deleteMany({
@@ -130,7 +152,9 @@ export default class GameManager {
                 },
             });
 
-            Logger.info(`プレイヤーがゲームから退出しました: ${discordId} (${gameId})`);
+            Logger.info(
+                `プレイヤーがゲームから退出しました: ${discordId} (${gameId})`
+            );
         } catch (error) {
             Logger.error(`ゲーム退出エラー: ${error}`);
             throw error;
@@ -145,22 +169,22 @@ export default class GameManager {
             // ゲーム情報を取得
             const game = await this.getGameWithRelations(gameId);
             if (!game) {
-                throw new Error('ゲームが見つかりません');
+                throw new Error("ゲームが見つかりません");
             }
 
             if (game.status !== GameStatus.WAITING) {
-                throw new Error('ゲームは既に開始されています');
+                throw new Error("ゲームは既に開始されています");
             }
 
             // 参加者数をチェック
             if (game.players.length < 2) {
-                throw new Error('参加者が不足しています（最低2人必要）');
+                throw new Error("参加者が不足しています（最低2人必要）");
             }
 
             // ランダムなお題を選択
             const topic = await this.getRandomTopic();
             if (!topic) {
-                throw new Error('利用可能なお題が見つかりません');
+                throw new Error("利用可能なお題が見つかりません");
             }
 
             // 古いカードを削除（新しいゲームの準備）
@@ -176,7 +200,7 @@ export default class GameManager {
                     startedAt: new Date(),
                     topicId: topic.id,
                     failureCount: 0, // 失敗数をリセット
-                    revealedCards: '[]', // 場のカードをリセット
+                    revealedCards: "[]", // 場のカードをリセット
                 },
             });
 
@@ -184,7 +208,9 @@ export default class GameManager {
             await this.distributeCards(gameId);
 
             Logger.info(`ゲームを開始しました: ${gameId}`);
-            return await this.getGameWithRelations(gameId) as GameWithRelations;
+            return (await this.getGameWithRelations(
+                gameId
+            )) as GameWithRelations;
         } catch (error) {
             Logger.error(`ゲーム開始エラー: ${error}`);
             throw error;
@@ -202,33 +228,39 @@ export default class GameManager {
             });
 
             if (!game) {
-                throw new Error('ゲームが見つかりません');
+                throw new Error("ゲームが見つかりません");
             }
 
             const { minNumber, maxNumber, cardCount } = game;
             const playerCount = game.players.length;
             const totalCards = playerCount * cardCount;
 
-            Logger.info(`カード配布開始: ${gameId} - プレイヤー:${playerCount}人, カード:${cardCount}枚/人`);
+            Logger.info(
+                `カード配布開始: ${gameId} - プレイヤー:${playerCount}人, カード:${cardCount}枚/人`
+            );
 
             // 利用可能な数字の範囲をチェック
             if (maxNumber - minNumber + 1 < totalCards) {
-                throw new Error('カード数が多すぎます');
+                throw new Error("カード数が多すぎます");
             }
 
             // ランダムな数字を生成（重複なし）
-            const numbers = this.generateRandomNumbers(minNumber, maxNumber, totalCards);
+            const numbers = this.generateRandomNumbers(
+                minNumber,
+                maxNumber,
+                totalCards
+            );
 
             // 各プレイヤーにカードを配布
             for (let i = 0; i < playerCount; i++) {
                 const player = game.players[i];
                 const playerCards: number[] = [];
-                
+
                 for (let j = 0; j < cardCount; j++) {
                     const cardIndex = i * cardCount + j;
                     const cardNumber = numbers[cardIndex];
                     playerCards.push(cardNumber);
-                    
+
                     await this.prisma.card.create({
                         data: {
                             gameId,
@@ -249,12 +281,21 @@ export default class GameManager {
     /**
      * ランダムな数字を生成（重複なし）
      */
-    private static generateRandomNumbers(min: number, max: number, count: number): number[] {
+    private static generateRandomNumbers(
+        min: number,
+        max: number,
+        count: number
+    ): number[] {
         const numbers: number[] = [];
-        const availableNumbers = Array.from({ length: max - min + 1 }, (_, i) => min + i);
+        const availableNumbers = Array.from(
+            { length: max - min + 1 },
+            (_, i) => min + i
+        );
 
         for (let i = 0; i < count; i++) {
-            const randomIndex = Math.floor(Math.random() * availableNumbers.length);
+            const randomIndex = Math.floor(
+                Math.random() * availableNumbers.length
+            );
             const selectedNumber = availableNumbers[randomIndex];
             numbers.push(selectedNumber);
             availableNumbers.splice(randomIndex, 1);
@@ -287,7 +328,9 @@ export default class GameManager {
     /**
      * ゲーム情報を取得（リレーション込み）
      */
-    public static async getGameWithRelations(gameId: string): Promise<GameWithRelations | null> {
+    public static async getGameWithRelations(
+        gameId: string
+    ): Promise<GameWithRelations | null> {
         try {
             return await this.prisma.game.findUnique({
                 where: { id: gameId },
@@ -310,7 +353,9 @@ export default class GameManager {
     /**
      * チャンネルのアクティブなゲームを取得
      */
-    public static async getActiveGameByChannel(channelId: string): Promise<Game | null> {
+    public static async getActiveGameByChannel(
+        channelId: string
+    ): Promise<Game | null> {
         try {
             return await this.prisma.game.findFirst({
                 where: {
@@ -329,7 +374,10 @@ export default class GameManager {
     /**
      * ゲームを終了
      */
-    public static async endGame(gameId: string, status: GameStatus = GameStatus.FINISHED): Promise<void> {
+    public static async endGame(
+        gameId: string,
+        status: GameStatus = GameStatus.FINISHED
+    ): Promise<void> {
         try {
             // ゲームに関連するカードを削除
             await this.prisma.card.deleteMany({
@@ -348,10 +396,12 @@ export default class GameManager {
             // ゲームメッセージ情報を削除
             await this.removeGameMessage(gameId);
 
-            Logger.info(`ゲームを終了しました: ${gameId} (${status}) - カードも削除`);
+            Logger.info(
+                `ゲームを終了しました: ${gameId} (${status}) - カードも削除`
+            );
         } catch (error) {
             Logger.error(`ゲーム終了エラー: ${error}`);
             throw error;
         }
     }
-} 
+}

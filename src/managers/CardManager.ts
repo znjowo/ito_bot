@@ -1,6 +1,6 @@
-import { Card } from '@prisma/client';
-import Database from '../lib/Database';
-import { Logger } from '../lib/Logger';
+import { Card } from "@prisma/client";
+import Database from "../lib/Database";
+import { Logger } from "../lib/Logger";
 
 interface CardWithPlayer extends Card {
     player: {
@@ -15,7 +15,10 @@ export default class CardManager {
     /**
      * プレイヤーの手札を取得
      */
-    public static async getPlayerCards(gameId: string, discordId: string): Promise<Card[]> {
+    public static async getPlayerCards(
+        gameId: string,
+        discordId: string
+    ): Promise<Card[]> {
         try {
             const player = await this.prisma.player.findUnique({
                 where: { discordId },
@@ -32,7 +35,7 @@ export default class CardManager {
                     isEliminated: false,
                 },
                 orderBy: {
-                    number: 'asc',
+                    number: "asc",
                 },
             });
         } catch (error) {
@@ -44,14 +47,17 @@ export default class CardManager {
     /**
      * カードを提示（最小値のカードを自動選択）
      */
-    public static async playCard(gameId: string, discordId: string): Promise<Card | null> {
+    public static async playCard(
+        gameId: string,
+        discordId: string
+    ): Promise<Card | null> {
         try {
             const player = await this.prisma.player.findUnique({
                 where: { discordId },
             });
 
             if (!player) {
-                throw new Error('プレイヤーが見つかりません');
+                throw new Error("プレイヤーが見つかりません");
             }
 
             // 最小値のカードを取得
@@ -63,7 +69,7 @@ export default class CardManager {
                     isRevealed: false,
                 },
                 orderBy: {
-                    number: 'asc',
+                    number: "asc",
                 },
             });
 
@@ -77,7 +83,9 @@ export default class CardManager {
                 data: { isRevealed: true },
             });
 
-            Logger.info(`カードを提示しました: ${discordId} -> ${card.number} (${gameId})`);
+            Logger.info(
+                `カードを提示しました: ${discordId} -> ${card.number} (${gameId})`
+            );
             return updatedCard;
         } catch (error) {
             Logger.error(`カード提示エラー: ${error}`);
@@ -88,14 +96,18 @@ export default class CardManager {
     /**
      * カードの失敗処理（全体の失敗数カウントとカード削除）
      */
-    public static async handleCardFailure(gameId: string, discordId: string, revealedNumber: number): Promise<void> {
+    public static async handleCardFailure(
+        gameId: string,
+        discordId: string,
+        revealedNumber: number
+    ): Promise<void> {
         try {
             const player = await this.prisma.player.findUnique({
                 where: { discordId },
             });
 
             if (!player) {
-                throw new Error('プレイヤーが見つかりません');
+                throw new Error("プレイヤーが見つかりません");
             }
 
             // ゲーム情報を取得
@@ -104,14 +116,14 @@ export default class CardManager {
             });
 
             if (!game) {
-                throw new Error('ゲームが見つかりません');
+                throw new Error("ゲームが見つかりません");
             }
 
             // 全体の失敗数を増加
             const newFailureCount = game.failureCount + 1;
             await this.prisma.game.update({
                 where: { id: gameId },
-                data: { 
+                data: {
                     failureCount: newFailureCount,
                 },
             });
@@ -174,7 +186,9 @@ export default class CardManager {
                 data: { revealedCards: JSON.stringify(newRevealedCards) },
             });
 
-            Logger.info(`カード失敗処理: ${discordId} 失敗数: ${game.failureCount} -> ${newFailureCount} (${gameId}) - ${revealedNumber}以下の手札カードを削除し場に追加: [${eliminatedNumbers.join(', ')}]`);
+            Logger.info(
+                `カード失敗処理: ${discordId} 失敗数: ${game.failureCount} -> ${newFailureCount} (${gameId}) - ${revealedNumber}以下の手札カードを削除し場に追加: [${eliminatedNumbers.join(", ")}]`
+            );
         } catch (error) {
             Logger.error(`カード失敗処理エラー: ${error}`);
             throw error;
@@ -184,7 +198,10 @@ export default class CardManager {
     /**
      * カードの成功処理（場にカードを追加）
      */
-    public static async handleCardSuccess(gameId: string, cardNumber: number): Promise<void> {
+    public static async handleCardSuccess(
+        gameId: string,
+        cardNumber: number
+    ): Promise<void> {
         try {
             // ゲーム情報を取得
             const game = await this.prisma.game.findUnique({
@@ -192,7 +209,7 @@ export default class CardManager {
             });
 
             if (!game) {
-                throw new Error('ゲームが見つかりません');
+                throw new Error("ゲームが見つかりません");
             }
 
             // 成功したカードを削除状態に設定
@@ -206,7 +223,7 @@ export default class CardManager {
             });
 
             // 場のカードを取得
-            const revealedCards = JSON.parse(game.revealedCards || '[]');
+            const revealedCards = JSON.parse(game.revealedCards || "[]");
             revealedCards.push(cardNumber);
             revealedCards.sort((a: number, b: number) => a - b); // 数字順にソート
 
@@ -216,7 +233,9 @@ export default class CardManager {
                 data: { revealedCards: JSON.stringify(revealedCards) },
             });
 
-            Logger.info(`カード成功処理: 場のカードに ${cardNumber} を追加し、カードを削除状態に設定 (${gameId})`);
+            Logger.info(
+                `カード成功処理: 場のカードに ${cardNumber} を追加し、カードを削除状態に設定 (${gameId})`
+            );
         } catch (error) {
             Logger.error(`カード成功処理エラー: ${error}`);
             throw error;
@@ -236,7 +255,7 @@ export default class CardManager {
                 return [];
             }
 
-            return JSON.parse(game.revealedCards || '[]');
+            return JSON.parse(game.revealedCards || "[]");
         } catch (error) {
             Logger.error(`場のカード取得エラー: ${error}`);
             return [];
@@ -246,10 +265,13 @@ export default class CardManager {
     /**
      * 場に出ているカードをプレイヤー情報付きで取得
      */
-    public static async getRevealedCardsWithPlayers(gameId: string): Promise<{ number: number; playerName: string }[]> {
+    public static async getRevealedCardsWithPlayers(
+        gameId: string
+    ): Promise<{ number: number; playerName: string }[]> {
         try {
             const revealedCards = await this.getRevealedCards(gameId);
-            const cardsWithPlayers: { number: number; playerName: string }[] = [];
+            const cardsWithPlayers: { number: number; playerName: string }[] =
+                [];
 
             for (const cardNumber of revealedCards) {
                 // その数字のカードを持つプレイヤーを検索
@@ -285,7 +307,11 @@ export default class CardManager {
     /**
      * 提示されたカードが正解かチェック（場のカードの次に小さい数字のみ正解）
      */
-    public static async isCorrectCard(gameId: string, cardNumber: number, discordId?: string): Promise<boolean> {
+    public static async isCorrectCard(
+        gameId: string,
+        cardNumber: number,
+        discordId?: string
+    ): Promise<boolean> {
         try {
             const revealedCards = await this.getRevealedCards(gameId);
 
@@ -319,7 +345,10 @@ export default class CardManager {
     /**
      * 指定された数字がゲーム内に存在するかチェック
      */
-    private static async doesNumberExistInGame(gameId: string, number: number): Promise<boolean> {
+    private static async doesNumberExistInGame(
+        gameId: string,
+        number: number
+    ): Promise<boolean> {
         try {
             const card = await this.prisma.card.findFirst({
                 where: {
@@ -328,7 +357,7 @@ export default class CardManager {
                     isEliminated: false,
                 },
             });
-            
+
             return card !== null;
         } catch (error) {
             Logger.error(`数字存在チェックエラー: ${error}`);
@@ -339,7 +368,10 @@ export default class CardManager {
     /**
      * 全カードの中で最小値かチェック
      */
-    private static async isSmallestCard(gameId: string, cardNumber: number): Promise<boolean> {
+    private static async isSmallestCard(
+        gameId: string,
+        cardNumber: number
+    ): Promise<boolean> {
         try {
             const allCards = await this.prisma.card.findMany({
                 where: {
@@ -362,7 +394,9 @@ export default class CardManager {
     /**
      * ゲームの全カードを開示
      */
-    public static async revealAllCards(gameId: string): Promise<CardWithPlayer[]> {
+    public static async revealAllCards(
+        gameId: string
+    ): Promise<CardWithPlayer[]> {
         try {
             const cards = await this.prisma.card.findMany({
                 where: { gameId },
@@ -374,13 +408,12 @@ export default class CardManager {
                         },
                     },
                 },
-                orderBy: [
-                    { player: { username: 'asc' } },
-                    { number: 'asc' },
-                ],
+                orderBy: [{ player: { username: "asc" } }, { number: "asc" }],
             });
 
-            Logger.info(`全カードを開示しました: ${gameId} (${cards.length}枚)`);
+            Logger.info(
+                `全カードを開示しました: ${gameId} (${cards.length}枚)`
+            );
             return cards;
         } catch (error) {
             Logger.error(`全カード開示エラー: ${error}`);
@@ -403,7 +436,9 @@ export default class CardManager {
 
             // 全体の失敗数がHPに達した場合
             if (game.failureCount >= game.hp) {
-                Logger.info(`ゲームオーバー: 失敗数上限到達 (${gameId}) - 失敗数:${game.failureCount}/${game.hp}`);
+                Logger.info(
+                    `ゲームオーバー: 失敗数上限到達 (${gameId}) - 失敗数:${game.failureCount}/${game.hp}`
+                );
                 return true;
             }
 
@@ -430,7 +465,10 @@ export default class CardManager {
     /**
      * プレイヤーがゲームオーバーかチェック（手札がない場合のみ）
      */
-    public static async isPlayerGameOver(gameId: string, discordId: string): Promise<boolean> {
+    public static async isPlayerGameOver(
+        gameId: string,
+        discordId: string
+    ): Promise<boolean> {
         try {
             const player = await this.prisma.player.findUnique({
                 where: { discordId },
@@ -506,7 +544,10 @@ export default class CardManager {
     /**
      * プレイヤーの残りカード数を取得
      */
-    public static async getPlayerRemainingCardCount(gameId: string, discordId: string): Promise<number> {
+    public static async getPlayerRemainingCardCount(
+        gameId: string,
+        discordId: string
+    ): Promise<number> {
         try {
             const player = await this.prisma.player.findUnique({
                 where: { discordId },
@@ -528,4 +569,4 @@ export default class CardManager {
             throw error;
         }
     }
-} 
+}

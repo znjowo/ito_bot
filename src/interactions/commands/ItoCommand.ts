@@ -25,7 +25,9 @@ class ItoCommand extends BaseInteractionManager<ChatInputCommandInteraction> {
             }
 
             // 既存のアクティブなゲームをチェック
-            const existingGame = await GameManager.getActiveGameByChannel(this.interaction.channelId);
+            const existingGame = await GameManager.getActiveGameByChannel(
+                this.interaction.channelId
+            );
             if (existingGame) {
                 await this.interaction.reply({
                     content: "このチャンネルでは既にゲームが進行中です。",
@@ -70,18 +72,28 @@ class ItoCommand extends BaseInteractionManager<ChatInputCommandInteraction> {
             // 埋め込みメッセージを作成
             const embed = new EmbedBuilder()
                 .setTitle("🎮 itoゲーム募集")
-                .setDescription(`${this.interaction.user} がitoゲームを開始しました！`)
+                .setDescription(
+                    `${this.interaction.user} がitoゲームを開始しました！`
+                )
                 .addFields(
-                    { name: "📊 設定", value: `数字範囲: ${min}-${max}\nカード枚数: ${cardCount}枚\nライフ: ${hp}`, inline: true },
+                    {
+                        name: "📊 設定",
+                        value: `数字範囲: ${min}-${max}\nカード枚数: ${cardCount}枚\nライフ: ${hp}`,
+                        inline: true,
+                    },
                     { name: "👥 参加者", value: "1人", inline: true },
-                    { name: "📋 参加者リスト", value: `• ${this.interaction.user.username}`, inline: false }
+                    {
+                        name: "📋 参加者リスト",
+                        value: `• ${this.interaction.user.username}`,
+                        inline: false,
+                    }
                 )
                 .setColor(0x00ff00)
                 .setTimestamp();
 
             // 参加ボタンを作成
-            const joinButton = new ActionRowBuilder<ButtonBuilder>()
-                .addComponents(
+            const joinButton =
+                new ActionRowBuilder<ButtonBuilder>().addComponents(
                     new ButtonBuilder()
                         .setCustomId(`${CustomIds.ItoJoin}${game.id}`)
                         .setLabel("参加する")
@@ -102,10 +114,15 @@ class ItoCommand extends BaseInteractionManager<ChatInputCommandInteraction> {
 
             // メッセージIDを保存
             const reply = await this.interaction.fetchReply();
-            await GameManager.saveGameMessage(game.id, reply.id, this.interaction.channelId);
+            await GameManager.saveGameMessage(
+                game.id,
+                reply.id,
+                this.interaction.channelId
+            );
 
-            Logger.info(`itoゲームを作成しました: ${game.id} by ${this.interaction.user.username}`);
-
+            Logger.info(
+                `itoゲームを作成しました: ${game.id} by ${this.interaction.user.username}`
+            );
         } catch (error) {
             Logger.error(`itoコマンドエラー: ${error}`);
             await this.interaction.reply({
@@ -155,4 +172,4 @@ const itoCommand: CommandPack = {
     instance: instance(ItoCommand),
 };
 
-export default itoCommand; 
+export default itoCommand;

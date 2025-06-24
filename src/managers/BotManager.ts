@@ -32,27 +32,30 @@ export default class BotManager {
      */
     private setupEventHandlers(): void {
         this.client.once(Events.ClientReady, this.onClientReady.bind(this));
-        this.client.on(Events.InteractionCreate, this.onInteractionCreate.bind(this));
+        this.client.on(
+            Events.InteractionCreate,
+            this.onInteractionCreate.bind(this)
+        );
 
         // クライアントの切断イベント
-        this.client.on('disconnect', () => {
+        this.client.on("disconnect", () => {
             Logger.warn("Discord切断");
         });
 
-        this.client.on('reconnecting', () => {
+        this.client.on("reconnecting", () => {
             Logger.info("Discord再接続中");
         });
 
-        this.client.on('resume', () => {
+        this.client.on("resume", () => {
             Logger.info("Discord再接続完了");
         });
 
         process.on("unhandledRejection", this.onUnhandledRejection.bind(this));
         process.on("uncaughtException", this.onUncaughtException.bind(this));
-        
+
         // プロセス終了時のクリーンアップ
-        process.on('SIGINT', this.onProcessExit.bind(this));
-        process.on('SIGTERM', this.onProcessExit.bind(this));
+        process.on("SIGINT", this.onProcessExit.bind(this));
+        process.on("SIGTERM", this.onProcessExit.bind(this));
     }
 
     /**
@@ -62,7 +65,7 @@ export default class BotManager {
         try {
             // データベースに接続
             await Database.connect();
-            
+
             Logger.info(`ボット準備完了: ${this.client.user?.tag}`);
         } catch (error) {
             Logger.error(`データベース接続エラー: ${error}`);
@@ -78,7 +81,9 @@ export default class BotManager {
 
         try {
             if (interaction.isCommand()) {
-                const command = this.commandManager.getCommand(interaction.commandName);
+                const command = this.commandManager.getCommand(
+                    interaction.commandName
+                );
                 if (command) {
                     await command.instance(interaction).execute();
                 } else {
@@ -89,7 +94,7 @@ export default class BotManager {
 
             if (interaction.isButton() || interaction.isModalSubmit()) {
                 const customId = interaction.customId as any;
-                const interactionObject = interaction.isButton() 
+                const interactionObject = interaction.isButton()
                     ? this.interactionManager.getButton(customId)
                     : this.interactionManager.getModal(customId);
 
@@ -124,16 +129,16 @@ export default class BotManager {
      * プロセス終了時の処理
      */
     private async onProcessExit(): Promise<void> {
-        Logger.info('プロセス終了処理を開始します...');
-        
+        Logger.info("プロセス終了処理を開始します...");
+
         try {
             // データベース接続を切断
             await Database.disconnect();
-            
+
             // ボットを終了
             await this.destroy();
-            
-            Logger.info('プロセス終了処理が完了しました');
+
+            Logger.info("プロセス終了処理が完了しました");
             process.exit(0);
         } catch (error) {
             Logger.error(`プロセス終了処理エラー: ${error}`);
@@ -163,10 +168,10 @@ export default class BotManager {
             if (this.client && this.client.isReady()) {
                 // 全てのイベントリスナーを削除
                 this.client.removeAllListeners();
-                
+
                 // クライアントを切断
                 this.client.destroy();
-                
+
                 Logger.info("Discord切断完了");
             }
         } catch (error) {
@@ -195,4 +200,3 @@ export default class BotManager {
         return this.client;
     }
 }
- 
