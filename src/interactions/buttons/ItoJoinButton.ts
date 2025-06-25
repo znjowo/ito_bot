@@ -17,8 +17,11 @@ class ItoJoinButton extends BaseInteractionManager<ButtonInteraction> {
     protected async main(): Promise<void> {
         try {
             // カスタムIDからゲームIDを抽出
-            const gameId = this.interaction.customId.replace(CustomIds.ItoJoin, "");
-            
+            const gameId = this.interaction.customId.replace(
+                CustomIds.ItoJoin,
+                ""
+            );
+
             // ゲーム情報を取得
             const game = await this.gameService.getGameById(gameId);
             if (!game) {
@@ -32,7 +35,8 @@ class ItoJoinButton extends BaseInteractionManager<ButtonInteraction> {
             // ゲームが募集状態でない場合はエラー
             if (!game.isWaiting()) {
                 await this.interaction.reply({
-                    content: "このゲームは既に開始されているため参加できません。",
+                    content:
+                        "このゲームは既に開始されているため参加できません。",
                     ephemeral: true,
                 });
                 return;
@@ -109,28 +113,27 @@ class ItoJoinButton extends BaseInteractionManager<ButtonInteraction> {
 
             // ボタンを更新（最低2人で開始可能）
             const canStart = updatedGame.canStart();
-            const joinRow = new ActionRowBuilder<ButtonBuilder>()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId(`${CustomIds.ItoJoin}${gameId}`)
-                        .setLabel("参加する")
-                        .setStyle(ButtonStyle.Primary)
-                        .setEmoji("🎯"),
-                    new ButtonBuilder()
-                        .setCustomId(`${CustomIds.ItoLeave}${gameId}`)
-                        .setLabel("退出する")
-                        .setStyle(ButtonStyle.Secondary)
-                        .setEmoji("🚪"),
-                    new ButtonBuilder()
-                        .setCustomId(`${CustomIds.ItoStart}${gameId}`)
-                        .setLabel("ゲーム開始")
-                        .setStyle(ButtonStyle.Success)
-                        .setEmoji("▶️")
-                        .setDisabled(!canStart)
-                );
-            
-            const controlRow = new ActionRowBuilder<ButtonBuilder>()
-                .addComponents(
+            const joinRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`${CustomIds.ItoJoin}${gameId}`)
+                    .setLabel("参加する")
+                    .setStyle(ButtonStyle.Primary)
+                    .setEmoji("🎯"),
+                new ButtonBuilder()
+                    .setCustomId(`${CustomIds.ItoLeave}${gameId}`)
+                    .setLabel("退出する")
+                    .setStyle(ButtonStyle.Secondary)
+                    .setEmoji("🚪"),
+                new ButtonBuilder()
+                    .setCustomId(`${CustomIds.ItoStart}${gameId}`)
+                    .setLabel("ゲーム開始")
+                    .setStyle(ButtonStyle.Success)
+                    .setEmoji("▶️")
+                    .setDisabled(!canStart)
+            );
+
+            const controlRow =
+                new ActionRowBuilder<ButtonBuilder>().addComponents(
                     new ButtonBuilder()
                         .setCustomId(`${CustomIds.ItoCancel}${gameId}`)
                         .setLabel("募集キャンセル")

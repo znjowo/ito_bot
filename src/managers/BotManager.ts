@@ -1,4 +1,10 @@
-import { Client, Events, IntentsBitField, Partials } from "discord.js";
+import {
+    ActivityType,
+    Client,
+    Events,
+    IntentsBitField,
+    Partials,
+} from "discord.js";
 import Database from "~/lib/Database";
 import { Logger } from "~/lib/Logger";
 import CommandManager from "./CommandManager";
@@ -8,6 +14,7 @@ export default class BotManager {
     private client: Client;
     private commandManager: CommandManager;
     private interactionManager: InteractionManager;
+    private presenceUpdateInterval?: NodeJS.Timeout;
 
     constructor() {
         this.client = new Client({
@@ -65,6 +72,17 @@ export default class BotManager {
         try {
             // データベースに接続
             await Database.connect();
+
+            // プレゼンスを初期設定
+            await this.updatePresence();
+
+            // プレゼンスの定期更新を開始（5分ごと）
+            this.presenceUpdateInterval = setInterval(
+                async () => {
+                    await this.updatePresence();
+                },
+                5 * 60 * 1000
+            ); // 5分 = 300,000ms
 
             Logger.info(`ボット準備完了: ${this.client.user?.tag}`);
         } catch (error) {
@@ -165,6 +183,12 @@ export default class BotManager {
      */
     public async destroy(): Promise<void> {
         try {
+            // プレゼンス更新インターバルをクリア
+            if (this.presenceUpdateInterval) {
+                clearInterval(this.presenceUpdateInterval);
+                this.presenceUpdateInterval = undefined;
+            }
+
             if (this.client && this.client.isReady()) {
                 // 全てのイベントリスナーを削除
                 this.client.removeAllListeners();
@@ -176,6 +200,32 @@ export default class BotManager {
             }
         } catch (error) {
             Logger.error(`切断エラー: ${error}`);
+        }
+    }
+
+    /**
+     * プレゼンス（プレイ中表記）を更新する
+     */
+    private async updatePresence(): Promise<void> {
+        try {
+            if (!this.client.isReady()) return;
+
+            const guildCount = this.client.guilds.cache.size;
+            const activityName = `/ito | ${guildCount}servers`;
+
+            await this.client.user?.setPresence({
+                activities: [
+                    {
+                        name: activityName,
+                        type: ActivityType.Playing,
+                    },
+                ],
+                status: "online",
+            });
+
+            Logger.info(`プレゼンス更新: ${activityName}`);
+        } catch (error) {
+            Logger.error(`プレゼンス更新エラー: ${error}`);
         }
     }
 

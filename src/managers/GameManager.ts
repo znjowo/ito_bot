@@ -132,7 +132,10 @@ export default class GameManager {
     /**
      * ゲームから退出
      */
-    public static async leaveGame(gameId: string, userId: string): Promise<void> {
+    public static async leaveGame(
+        gameId: string,
+        userId: string
+    ): Promise<void> {
         try {
             // 参加しているかチェック
             const existingPlayer = await this.prisma.gamePlayer.findFirst({
@@ -155,7 +158,9 @@ export default class GameManager {
                 },
             });
 
-            Logger.info(`プレイヤーがゲームから退出しました: ${userId} from ${gameId}`);
+            Logger.info(
+                `プレイヤーがゲームから退出しました: ${userId} from ${gameId}`
+            );
         } catch (error) {
             Logger.error(`ゲーム退出エラー: ${error}`);
             throw error;

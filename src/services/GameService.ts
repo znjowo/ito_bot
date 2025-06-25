@@ -14,7 +14,11 @@ export interface GameMessageInfo {
 
 export interface IGameService {
     createGame(options: CreateGameOptions): Promise<GameModel>;
-    joinGame(gameId: string, discordId: string, username: string): Promise<void>;
+    joinGame(
+        gameId: string,
+        discordId: string,
+        username: string
+    ): Promise<void>;
     leaveGame(gameId: string, discordId: string): Promise<void>;
     startGame(gameId: string): Promise<GameModel>;
     endGame(gameId: string, status?: GameStatus): Promise<void>;
@@ -22,7 +26,11 @@ export interface IGameService {
     updateTopic(gameId: string, topicId: string): Promise<void>;
     getGameById(gameId: string): Promise<GameModel | null>;
     getActiveGameByChannel(channelId: string): Promise<Game | null>;
-    saveGameMessage(gameId: string, messageId: string, channelId: string): Promise<void>;
+    saveGameMessage(
+        gameId: string,
+        messageId: string,
+        channelId: string
+    ): Promise<void>;
     getGameMessage(gameId: string): Promise<GameMessageInfo | null>;
     removeGameMessage(gameId: string): Promise<void>;
 }
@@ -39,8 +47,10 @@ export class GameService implements IGameService {
     async createGame(options: CreateGameOptions): Promise<GameModel> {
         try {
             const game = await this.gameRepository.create(options);
-            const gameWithRelations = await this.gameRepository.findById(game.id);
-            
+            const gameWithRelations = await this.gameRepository.findById(
+                game.id
+            );
+
             if (!gameWithRelations) {
                 throw new Error("作成されたゲームの取得に失敗しました");
             }
@@ -53,23 +63,35 @@ export class GameService implements IGameService {
         }
     }
 
-    async joinGame(gameId: string, discordId: string, username: string): Promise<void> {
+    async joinGame(
+        gameId: string,
+        discordId: string,
+        username: string
+    ): Promise<void> {
         try {
             // プレイヤーを作成または更新
-            const player = await this.playerRepository.createOrUpdate(discordId, username);
-            
+            const player = await this.playerRepository.createOrUpdate(
+                discordId,
+                username
+            );
+
             // ゲームに参加済みかチェック
-            const existingPlayer = await this.playerRepository.findGamePlayers(gameId);
-            const isAlreadyJoined = existingPlayer.some(p => p.player.discordId === discordId);
-            
+            const existingPlayer =
+                await this.playerRepository.findGamePlayers(gameId);
+            const isAlreadyJoined = existingPlayer.some(
+                p => p.player.discordId === discordId
+            );
+
             if (isAlreadyJoined) {
                 throw new Error("既にゲームに参加しています");
             }
 
             // ゲームに参加
             await this.playerRepository.joinGame(gameId, player.id);
-            
-            Logger.info(`プレイヤーがゲームに参加しました: ${discordId} (${gameId})`);
+
+            Logger.info(
+                `プレイヤーがゲームに参加しました: ${discordId} (${gameId})`
+            );
         } catch (error) {
             Logger.error(`ゲーム参加エラー: ${error}`);
             throw error;
@@ -78,14 +100,17 @@ export class GameService implements IGameService {
 
     async leaveGame(gameId: string, discordId: string): Promise<void> {
         try {
-            const player = await this.playerRepository.findByDiscordId(discordId);
+            const player =
+                await this.playerRepository.findByDiscordId(discordId);
             if (!player) {
                 throw new Error("プレイヤーが見つかりません");
             }
 
             await this.playerRepository.leaveGame(gameId, player.id);
-            
-            Logger.info(`プレイヤーがゲームから退出しました: ${discordId} (${gameId})`);
+
+            Logger.info(
+                `プレイヤーがゲームから退出しました: ${discordId} (${gameId})`
+            );
         } catch (error) {
             Logger.error(`ゲーム退出エラー: ${error}`);
             throw error;
@@ -144,7 +169,10 @@ export class GameService implements IGameService {
         }
     }
 
-    async endGame(gameId: string, status: GameStatus = GameStatus.FINISHED): Promise<void> {
+    async endGame(
+        gameId: string,
+        status: GameStatus = GameStatus.FINISHED
+    ): Promise<void> {
         try {
             // カードを削除
             await this.cardRepository.deleteByGame(gameId);
@@ -169,7 +197,7 @@ export class GameService implements IGameService {
         try {
             await this.gameRepository.delete(gameId);
             await this.removeGameMessage(gameId);
-            
+
             Logger.info(`ゲームが削除されました: ${gameId}`);
         } catch (error) {
             Logger.error(`ゲーム削除エラー: ${error}`);
@@ -185,9 +213,9 @@ export class GameService implements IGameService {
             }
 
             await this.gameRepository.updateTopic(gameId, topicId);
-            
+
             const afterGame = await this.gameRepository.findById(gameId);
-            
+
             Logger.info(
                 `ゲームのお題を更新しました: ${gameId} - 変更前: ${beforeGame.topic?.title || "なし"} -> 変更後: ${afterGame?.topic?.title || "なし"}`
             );
@@ -201,7 +229,7 @@ export class GameService implements IGameService {
         try {
             const gameData = await this.gameRepository.findById(gameId);
             if (!gameData) return null;
-            
+
             return new GameModel(gameData);
         } catch (error) {
             Logger.error(`ゲーム取得エラー: ${error}`);
@@ -218,7 +246,11 @@ export class GameService implements IGameService {
         }
     }
 
-    async saveGameMessage(gameId: string, messageId: string, channelId: string): Promise<void> {
+    async saveGameMessage(
+        gameId: string,
+        messageId: string,
+        channelId: string
+    ): Promise<void> {
         this.gameMessages.set(gameId, { gameId, messageId, channelId });
     }
 
@@ -244,7 +276,8 @@ export class GameService implements IGameService {
             const totalCards = game.players.length * game.cardCount;
 
             if (!game.isCardDistributionPossible()) {
-                const { totalCardsNeeded, availableNumbers } = game.getCardDistributionInfo();
+                const { totalCardsNeeded, availableNumbers } =
+                    game.getCardDistributionInfo();
                 throw new Error(
                     `カード配布不可能: 必要カード数(${totalCardsNeeded}枚) > 利用可能数字(${availableNumbers}個, ${game.minNumber}-${game.maxNumber})`
                 );
@@ -254,15 +287,19 @@ export class GameService implements IGameService {
             const numbers = game.generateRandomNumbers(totalCards);
 
             // 各プレイヤーにカードを配布
-            const cards: { gameId: string; playerId: string; number: number }[] = [];
-            
+            const cards: {
+                gameId: string;
+                playerId: string;
+                number: number;
+            }[] = [];
+
             for (let i = 0; i < game.players.length; i++) {
                 const player = game.players[i];
-                
+
                 for (let j = 0; j < game.cardCount; j++) {
                     const cardIndex = i * game.cardCount + j;
                     const cardNumber = numbers[cardIndex];
-                    
+
                     cards.push({
                         gameId: game.id,
                         playerId: player.playerId,
@@ -279,4 +316,4 @@ export class GameService implements IGameService {
             throw error;
         }
     }
-} 
+}

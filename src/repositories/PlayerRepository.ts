@@ -5,10 +5,15 @@ import { PlayerWithCards } from "~/models/Player";
 export interface IPlayerRepository {
     findByDiscordId(discordId: string): Promise<Player | null>;
     createOrUpdate(discordId: string, username: string): Promise<Player>;
-    findWithCards(discordId: string, gameId?: string): Promise<PlayerWithCards | null>;
+    findWithCards(
+        discordId: string,
+        gameId?: string
+    ): Promise<PlayerWithCards | null>;
     joinGame(gameId: string, playerId: string): Promise<GamePlayer>;
     leaveGame(gameId: string, playerId: string): Promise<void>;
-    findGamePlayers(gameId: string): Promise<(GamePlayer & { player: Player })[]>;
+    findGamePlayers(
+        gameId: string
+    ): Promise<(GamePlayer & { player: Player })[]>;
 }
 
 export class PlayerRepository implements IPlayerRepository {
@@ -28,9 +33,12 @@ export class PlayerRepository implements IPlayerRepository {
         });
     }
 
-    async findWithCards(discordId: string, gameId?: string): Promise<PlayerWithCards | null> {
+    async findWithCards(
+        discordId: string,
+        gameId?: string
+    ): Promise<PlayerWithCards | null> {
         const whereClause: any = { discordId };
-        
+
         return await this.prisma.player.findUnique({
             where: whereClause,
             include: {
@@ -57,10 +65,12 @@ export class PlayerRepository implements IPlayerRepository {
         });
     }
 
-    async findGamePlayers(gameId: string): Promise<(GamePlayer & { player: Player })[]> {
+    async findGamePlayers(
+        gameId: string
+    ): Promise<(GamePlayer & { player: Player })[]> {
         return await this.prisma.gamePlayer.findMany({
             where: { gameId },
             include: { player: true },
         });
     }
-} 
+}

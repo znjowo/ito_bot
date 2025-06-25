@@ -5,7 +5,10 @@ import { GameWithRelations, CreateGameOptions } from "~/models/Game";
 export interface IGameRepository {
     create(options: CreateGameOptions): Promise<Game>;
     findById(id: string): Promise<GameWithRelations | null>;
-    findByChannel(channelId: string, statuses?: GameStatus[]): Promise<Game | null>;
+    findByChannel(
+        channelId: string,
+        statuses?: GameStatus[]
+    ): Promise<Game | null>;
     update(id: string, data: Partial<Game>): Promise<Game>;
     delete(id: string): Promise<void>;
     updateTopic(id: string, topicId: string): Promise<Game>;
@@ -59,7 +62,7 @@ export class GameRepository implements IGameRepository {
     }
 
     async findByChannel(
-        channelId: string, 
+        channelId: string,
         statuses: GameStatus[] = [GameStatus.WAITING, GameStatus.PLAYING]
     ): Promise<Game | null> {
         return await this.prisma.game.findFirst({
@@ -122,4 +125,4 @@ export class GameRepository implements IGameRepository {
             },
         });
     }
-} 
+}

@@ -1,7 +1,4 @@
-import {
-    ButtonInteraction,
-    EmbedBuilder,
-} from "discord.js";
+import { ButtonInteraction, EmbedBuilder } from "discord.js";
 import { ButtonPack, instance } from "~/interfaces/IDiscord";
 import { CustomIds } from "~/interfaces/IEnum";
 import { DIContainer } from "~/lib/DIContainer";
@@ -14,8 +11,11 @@ class ItoCancelButton extends BaseInteractionManager<ButtonInteraction> {
     protected async main(): Promise<void> {
         try {
             // カスタムIDからゲームIDを抽出
-            const gameId = this.interaction.customId.replace(CustomIds.ItoCancel, "");
-            
+            const gameId = this.interaction.customId.replace(
+                CustomIds.ItoCancel,
+                ""
+            );
+
             // ゲーム情報を取得
             const game = await this.gameService.getGameById(gameId);
             if (!game) {
@@ -38,7 +38,8 @@ class ItoCancelButton extends BaseInteractionManager<ButtonInteraction> {
             // ゲームが募集状態でない場合はエラー
             if (!game.isWaiting()) {
                 await this.interaction.reply({
-                    content: "既に開始されたゲームはキャンセルできません。強制終了を使用してください。",
+                    content:
+                        "既に開始されたゲームはキャンセルできません。強制終了を使用してください。",
                     ephemeral: true,
                 });
                 return;
@@ -50,7 +51,9 @@ class ItoCancelButton extends BaseInteractionManager<ButtonInteraction> {
             // キャンセル完了メッセージに更新
             const embed = new EmbedBuilder()
                 .setTitle("❌ ゲーム募集キャンセル")
-                .setDescription(`<@${this.interaction.user.id}> がゲーム募集をキャンセルしました。`)
+                .setDescription(
+                    `<@${this.interaction.user.id}> がゲーム募集をキャンセルしました。`
+                )
                 .setColor(0xff6b6b)
                 .setTimestamp();
 
@@ -59,8 +62,9 @@ class ItoCancelButton extends BaseInteractionManager<ButtonInteraction> {
                 components: [], // ボタンをすべて削除
             });
 
-            Logger.info(`ゲーム募集がキャンセルされました: ${gameId} by ${this.interaction.user.username}`);
-
+            Logger.info(
+                `ゲーム募集がキャンセルされました: ${gameId} by ${this.interaction.user.username}`
+            );
         } catch (error) {
             Logger.error(`itoキャンセルボタンエラー: ${error}`);
             await this.interaction.reply({
@@ -76,4 +80,4 @@ const itoCancelButton: ButtonPack = {
     instance: instance(ItoCancelButton),
 };
 
-export default itoCancelButton; 
+export default itoCancelButton;

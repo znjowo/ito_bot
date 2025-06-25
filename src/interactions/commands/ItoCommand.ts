@@ -117,28 +117,27 @@ class ItoCommand extends BaseInteractionManager<ChatInputCommandInteraction> {
                 .setTimestamp();
 
             // 参加ボタンを作成
-            const joinRow = new ActionRowBuilder<ButtonBuilder>()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId(`${CustomIds.ItoJoin}${game.id}`)
-                        .setLabel("参加する")
-                        .setStyle(ButtonStyle.Primary)
-                        .setEmoji("🎯"),
-                    new ButtonBuilder()
-                        .setCustomId(`${CustomIds.ItoLeave}${game.id}`)
-                        .setLabel("退出する")
-                        .setStyle(ButtonStyle.Secondary)
-                        .setEmoji("🚪"),
-                    new ButtonBuilder()
-                        .setCustomId(`${CustomIds.ItoStart}${game.id}`)
-                        .setLabel("ゲーム開始")
-                        .setStyle(ButtonStyle.Success)
-                        .setEmoji("▶️")
-                        .setDisabled(true) // 最低2人必要
-                );
-            
-            const controlRow = new ActionRowBuilder<ButtonBuilder>()
-                .addComponents(
+            const joinRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`${CustomIds.ItoJoin}${game.id}`)
+                    .setLabel("参加する")
+                    .setStyle(ButtonStyle.Primary)
+                    .setEmoji("🎯"),
+                new ButtonBuilder()
+                    .setCustomId(`${CustomIds.ItoLeave}${game.id}`)
+                    .setLabel("退出する")
+                    .setStyle(ButtonStyle.Secondary)
+                    .setEmoji("🚪"),
+                new ButtonBuilder()
+                    .setCustomId(`${CustomIds.ItoStart}${game.id}`)
+                    .setLabel("ゲーム開始")
+                    .setStyle(ButtonStyle.Success)
+                    .setEmoji("▶️")
+                    .setDisabled(true) // 最低2人必要
+            );
+
+            const controlRow =
+                new ActionRowBuilder<ButtonBuilder>().addComponents(
                     new ButtonBuilder()
                         .setCustomId(`${CustomIds.ItoCancel}${game.id}`)
                         .setLabel("募集キャンセル")

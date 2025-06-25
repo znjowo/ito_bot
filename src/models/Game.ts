@@ -1,4 +1,11 @@
-import { Card, GamePlayer, GameStatus, Player, Game as PrismaGame, Topic } from "@prisma/client";
+import {
+    Card,
+    GamePlayer,
+    GameStatus,
+    Player,
+    Game as PrismaGame,
+    Topic,
+} from "@prisma/client";
 
 export interface GameWithRelations extends PrismaGame {
     topic: Topic | null;
@@ -110,7 +117,9 @@ export class GameModel {
     }
 
     public isPlayerJoined(discordId: string): boolean {
-        return this.players.some(player => player.player.discordId === discordId);
+        return this.players.some(
+            player => player.player.discordId === discordId
+        );
     }
 
     public isCreator(discordId: string): boolean {
@@ -144,7 +153,7 @@ export class GameModel {
     public getPlayerCards(discordId: string): Card[] {
         const player = this.players.find(p => p.player.discordId === discordId);
         if (!player) return [];
-        
+
         return this.cards.filter(
             card => card.playerId === player.playerId && !card.isEliminated
         );
@@ -158,7 +167,9 @@ export class GameModel {
         );
 
         for (let i = 0; i < count; i++) {
-            const randomIndex = Math.floor(Math.random() * availableNumbers.length);
+            const randomIndex = Math.floor(
+                Math.random() * availableNumbers.length
+            );
             const selectedNumber = availableNumbers[randomIndex];
             numbers.push(selectedNumber);
             availableNumbers.splice(randomIndex, 1);
@@ -174,4 +185,4 @@ export class GameModel {
     public updateData(data: Partial<GameWithRelations>): void {
         this.data = { ...this.data, ...data };
     }
-} 
+}

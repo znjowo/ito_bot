@@ -10,14 +10,23 @@ export interface CardWithPlayer extends Card {
 
 export interface ICardRepository {
     create(gameId: string, playerId: string, number: number): Promise<Card>;
-    createMany(cards: { gameId: string; playerId: string; number: number }[]): Promise<void>;
+    createMany(
+        cards: { gameId: string; playerId: string; number: number }[]
+    ): Promise<void>;
     findByGame(gameId: string): Promise<Card[]>;
     findByPlayer(gameId: string, playerId: string): Promise<Card[]>;
     findActiveByPlayer(gameId: string, playerId: string): Promise<Card[]>;
-    findSmallestUnrevealed(gameId: string, playerId: string): Promise<Card | null>;
+    findSmallestUnrevealed(
+        gameId: string,
+        playerId: string
+    ): Promise<Card | null>;
     reveal(id: string): Promise<Card>;
     eliminate(id: string): Promise<Card>;
-    eliminateByNumbers(gameId: string, numbers: number[], excludeNumbers: number[]): Promise<Card[]>;
+    eliminateByNumbers(
+        gameId: string,
+        numbers: number[],
+        excludeNumbers: number[]
+    ): Promise<Card[]>;
     findAllWithPlayers(gameId: string): Promise<CardWithPlayer[]>;
     countRemaining(gameId: string): Promise<number>;
     countRemainingByPlayer(gameId: string, playerId: string): Promise<number>;
@@ -27,7 +36,11 @@ export interface ICardRepository {
 export class CardRepository implements ICardRepository {
     private prisma = Database.getInstance();
 
-    async create(gameId: string, playerId: string, number: number): Promise<Card> {
+    async create(
+        gameId: string,
+        playerId: string,
+        number: number
+    ): Promise<Card> {
         return await this.prisma.card.create({
             data: {
                 gameId,
@@ -37,7 +50,9 @@ export class CardRepository implements ICardRepository {
         });
     }
 
-    async createMany(cards: { gameId: string; playerId: string; number: number }[]): Promise<void> {
+    async createMany(
+        cards: { gameId: string; playerId: string; number: number }[]
+    ): Promise<void> {
         await this.prisma.card.createMany({
             data: cards,
         });
@@ -60,7 +75,10 @@ export class CardRepository implements ICardRepository {
         });
     }
 
-    async findActiveByPlayer(gameId: string, playerId: string): Promise<Card[]> {
+    async findActiveByPlayer(
+        gameId: string,
+        playerId: string
+    ): Promise<Card[]> {
         return await this.prisma.card.findMany({
             where: {
                 gameId,
@@ -71,7 +89,10 @@ export class CardRepository implements ICardRepository {
         });
     }
 
-    async findSmallestUnrevealed(gameId: string, playerId: string): Promise<Card | null> {
+    async findSmallestUnrevealed(
+        gameId: string,
+        playerId: string
+    ): Promise<Card | null> {
         return await this.prisma.card.findFirst({
             where: {
                 gameId,
@@ -97,7 +118,11 @@ export class CardRepository implements ICardRepository {
         });
     }
 
-    async eliminateByNumbers(gameId: string, numbers: number[], excludeNumbers: number[]): Promise<Card[]> {
+    async eliminateByNumbers(
+        gameId: string,
+        numbers: number[],
+        excludeNumbers: number[]
+    ): Promise<Card[]> {
         const cardsToEliminate = await this.prisma.card.findMany({
             where: {
                 gameId,
@@ -148,7 +173,10 @@ export class CardRepository implements ICardRepository {
         });
     }
 
-    async countRemainingByPlayer(gameId: string, playerId: string): Promise<number> {
+    async countRemainingByPlayer(
+        gameId: string,
+        playerId: string
+    ): Promise<number> {
         return await this.prisma.card.count({
             where: {
                 gameId,
@@ -164,4 +192,4 @@ export class CardRepository implements ICardRepository {
             where: { gameId },
         });
     }
-} 
+}

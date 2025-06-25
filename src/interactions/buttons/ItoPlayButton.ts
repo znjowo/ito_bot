@@ -1,8 +1,5 @@
 import { GameStatus } from "@prisma/client";
-import {
-    ButtonInteraction,
-    EmbedBuilder,
-} from "discord.js";
+import { ButtonInteraction, EmbedBuilder } from "discord.js";
 import { ButtonPack, instance } from "~/interfaces/IDiscord";
 import { CustomIds } from "~/interfaces/IEnum";
 import { DIContainer } from "~/lib/DIContainer";
@@ -16,8 +13,11 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
     protected async main(): Promise<void> {
         try {
             // カスタムIDからゲームIDを抽出
-            const gameId = this.interaction.customId.replace(CustomIds.ItoPlay, "");
-            
+            const gameId = this.interaction.customId.replace(
+                CustomIds.ItoPlay,
+                ""
+            );
+
             // ゲーム情報を取得
             const game = await this.gameService.getGameById(gameId);
             if (!game) {
@@ -38,10 +38,11 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
             }
 
             // プレイヤーがゲームオーバーかチェック
-            const playerRemainingCards = await this.cardService.getPlayerRemainingCardCount(
-                gameId,
-                this.interaction.user.id
-            );
+            const playerRemainingCards =
+                await this.cardService.getPlayerRemainingCardCount(
+                    gameId,
+                    this.interaction.user.id
+                );
 
             if (playerRemainingCards === 0) {
                 await this.interaction.reply({
@@ -52,7 +53,10 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
             }
 
             // 一番小さいカードを自動で提示
-            const card = await this.cardService.playCard(gameId, this.interaction.user.id);
+            const card = await this.cardService.playCard(
+                gameId,
+                this.interaction.user.id
+            );
             if (!card) {
                 await this.interaction.reply({
                     content: "提示できるカードがありません。",
@@ -75,7 +79,7 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
             }
         } catch (error) {
             Logger.error(`itoプレイボタンエラー: ${error}`);
-            
+
             // エラーハンドリング - どのインタラクションが利用可能かチェック
             try {
                 if (this.interaction.deferred || this.interaction.replied) {
@@ -112,19 +116,23 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
             if (!updatedGame) return;
 
             // 場のカードを取得
-            const revealedCardsWithPlayers = await this.cardService.getRevealedCardsWithPlayers(gameId);
+            const revealedCardsWithPlayers =
+                await this.cardService.getRevealedCardsWithPlayers(gameId);
 
             // 場のカード表示を作成
-            const fieldCards = revealedCardsWithPlayers.length > 0
-                ? revealedCardsWithPlayers
-                    .map(card => `**${card.playerName}**: ${card.number}`)
-                    .join("\n")
-                : "まだカードが出されていません";
+            const fieldCards =
+                revealedCardsWithPlayers.length > 0
+                    ? revealedCardsWithPlayers
+                          .map(card => `**${card.playerName}**: ${card.number}`)
+                          .join("\n")
+                    : "まだカードが出されていません";
 
             // 成功メッセージを作成
             const embed = new EmbedBuilder()
                 .setTitle("✅ カード提示成功！")
-                .setDescription(`${this.interaction.user} がカード **${card.number}** を提示しました！`)
+                .setDescription(
+                    `${this.interaction.user} がカード **${card.number}** を提示しました！`
+                )
                 .addFields(
                     {
                         name: "📊 現在の状況",
@@ -212,19 +220,23 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
             if (!updatedGame) return;
 
             // 場のカードを取得
-            const revealedCardsWithPlayers = await this.cardService.getRevealedCardsWithPlayers(gameId);
+            const revealedCardsWithPlayers =
+                await this.cardService.getRevealedCardsWithPlayers(gameId);
 
             // 場のカード表示を作成
-            const fieldCards = revealedCardsWithPlayers.length > 0
-                ? revealedCardsWithPlayers
-                    .map(card => `**${card.playerName}**: ${card.number}`)
-                    .join("\n")
-                : "まだカードが出されていません";
+            const fieldCards =
+                revealedCardsWithPlayers.length > 0
+                    ? revealedCardsWithPlayers
+                          .map(card => `**${card.playerName}**: ${card.number}`)
+                          .join("\n")
+                    : "まだカードが出されていません";
 
             // 失敗メッセージを作成
             const embed = new EmbedBuilder()
                 .setTitle("❌ カード提示失敗！")
-                .setDescription(`${this.interaction.user} がカード **${card.number}** を提示しましたが、失敗しました。`)
+                .setDescription(
+                    `${this.interaction.user} がカード **${card.number}** を提示しましたが、失敗しました。`
+                )
                 .addFields(
                     {
                         name: "📊 現在の状況",
@@ -242,9 +254,10 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
 
             // ゲームオーバーかチェック
             const isGameOver = await this.cardService.isGameOver(gameId);
-            
+
             // 失敗によってカードが全削除された場合もゲームオーバー
-            const remainingCards = await this.cardService.getRemainingCardCount(gameId);
+            const remainingCards =
+                await this.cardService.getRemainingCardCount(gameId);
             const isCardDepleted = remainingCards === 0;
 
             if (isGameOver || isCardDepleted) {
@@ -265,7 +278,11 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
                 const allCards = await this.cardService.revealAllCards(gameId);
                 const playerCards = new Map<
                     string,
-                    { username: string; cards: number[]; eliminatedCards: number[] }
+                    {
+                        username: string;
+                        cards: number[];
+                        eliminatedCards: number[];
+                    }
                 >();
 
                 for (const cardData of allCards) {
@@ -279,7 +296,9 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
                     }
 
                     if (cardData.isEliminated) {
-                        playerCards.get(key)!.eliminatedCards.push(cardData.number);
+                        playerCards
+                            .get(key)!
+                            .eliminatedCards.push(cardData.number);
                     } else {
                         playerCards.get(key)!.cards.push(cardData.number);
                     }
@@ -329,7 +348,10 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
     /**
      * ゲームメッセージを更新
      */
-    private async updateGameMessage(gameId: string, embed: EmbedBuilder): Promise<void> {
+    private async updateGameMessage(
+        gameId: string,
+        embed: EmbedBuilder
+    ): Promise<void> {
         try {
             const gameMessage = await this.gameService.getGameMessage(gameId);
             if (!gameMessage) {
@@ -341,7 +363,9 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
                 return;
             }
 
-            const channel = await this.interaction.client.channels.fetch(gameMessage.channelId);
+            const channel = await this.interaction.client.channels.fetch(
+                gameMessage.channelId
+            );
             if (!channel || !channel.isTextBased()) {
                 // チャンネルが見つからない場合は、ボタンインタラクションに直接応答
                 await this.interaction.update({

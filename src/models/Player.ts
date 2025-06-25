@@ -42,14 +42,16 @@ export class PlayerModel {
     }
 
     public getUnrevealedCards(): Card[] {
-        return this.cards.filter(card => !card.isRevealed && !card.isEliminated);
+        return this.cards.filter(
+            card => !card.isRevealed && !card.isEliminated
+        );
     }
 
     public getSmallestCard(): Card | null {
         const unrevealedCards = this.getUnrevealedCards();
         if (unrevealedCards.length === 0) return null;
-        
-        return unrevealedCards.reduce((min, card) => 
+
+        return unrevealedCards.reduce((min, card) =>
             card.number < min.number ? card : min
         );
     }
@@ -77,4 +79,4 @@ export class PlayerModel {
     public updateData(data: Partial<PlayerWithCards>): void {
         this.data = { ...this.data, ...data };
     }
-} 
+}

@@ -17,8 +17,11 @@ class ItoLeaveButton extends BaseInteractionManager<ButtonInteraction> {
     protected async main(): Promise<void> {
         try {
             // カスタムIDからゲームIDを抽出
-            const gameId = this.interaction.customId.replace(CustomIds.ItoLeave, "");
-            
+            const gameId = this.interaction.customId.replace(
+                CustomIds.ItoLeave,
+                ""
+            );
+
             // ゲーム情報を取得
             const game = await this.gameService.getGameById(gameId);
             if (!game) {
@@ -32,7 +35,8 @@ class ItoLeaveButton extends BaseInteractionManager<ButtonInteraction> {
             // ゲームが募集状態でない場合はエラー
             if (!game.isWaiting()) {
                 await this.interaction.reply({
-                    content: "このゲームは既に開始されているため退出できません。",
+                    content:
+                        "このゲームは既に開始されているため退出できません。",
                     ephemeral: true,
                 });
                 return;
@@ -50,7 +54,8 @@ class ItoLeaveButton extends BaseInteractionManager<ButtonInteraction> {
             // ゲーム作成者の場合は退出できない
             if (game.isCreator(this.interaction.user.id)) {
                 await this.interaction.reply({
-                    content: "ゲーム作成者は退出できません。ゲームを削除するには強制終了を使用してください。",
+                    content:
+                        "ゲーム作成者は退出できません。ゲームを削除するには強制終了を使用してください。",
                     ephemeral: true,
                 });
                 return;
@@ -70,9 +75,12 @@ class ItoLeaveButton extends BaseInteractionManager<ButtonInteraction> {
             }
 
             // 参加者リストを作成
-            const playerList = updatedGame.players.length > 0
-                ? updatedGame.players.map(player => `• ${player.player.username}`).join("\n")
-                : "参加者がいません";
+            const playerList =
+                updatedGame.players.length > 0
+                    ? updatedGame.players
+                          .map(player => `• ${player.player.username}`)
+                          .join("\n")
+                    : "参加者がいません";
 
             // カード配布可能性チェック
             const distributionInfo = updatedGame.getCardDistributionInfo();
@@ -80,29 +88,34 @@ class ItoLeaveButton extends BaseInteractionManager<ButtonInteraction> {
             // 埋め込みメッセージを更新
             const embed = new EmbedBuilder()
                 .setTitle("🎮 itoゲーム募集")
-                .setDescription(`<@${updatedGame.createdBy}> がitoゲームを開始しました！`)
+                .setDescription(
+                    `<@${updatedGame.createdBy}> がitoゲームを開始しました！`
+                )
                 .addFields(
-                    { 
-                        name: "📊 設定", 
-                        value: `数字範囲: ${updatedGame.minNumber}-${updatedGame.maxNumber}\nカード枚数: ${updatedGame.cardCount}枚\nライフ: ${updatedGame.hp}`, 
-                        inline: true 
+                    {
+                        name: "📊 設定",
+                        value: `数字範囲: ${updatedGame.minNumber}-${updatedGame.maxNumber}\nカード枚数: ${updatedGame.cardCount}枚\nライフ: ${updatedGame.hp}`,
+                        inline: true,
                     },
-                    { 
-                        name: "👥 参加者", 
-                        value: `${updatedGame.players.length}人`, 
-                        inline: true 
+                    {
+                        name: "👥 参加者",
+                        value: `${updatedGame.players.length}人`,
+                        inline: true,
                     },
-                    { 
-                        name: "📋 参加者リスト", 
-                        value: playerList, 
-                        inline: false 
+                    {
+                        name: "📋 参加者リスト",
+                        value: playerList,
+                        inline: false,
                     }
                 )
                 .setColor(distributionInfo.isPossible ? 0x00ff00 : 0xffa500)
                 .setTimestamp();
 
             // カード配布不可能な場合は警告を追加
-            if (!distributionInfo.isPossible && updatedGame.players.length > 0) {
+            if (
+                !distributionInfo.isPossible &&
+                updatedGame.players.length > 0
+            ) {
                 embed.addFields({
                     name: "⚠️ 警告",
                     value: `現在の参加者数では開始できません。\n必要カード数: ${distributionInfo.totalCardsNeeded}枚\n利用可能数字: ${distributionInfo.availableNumbers}個\n\n数字範囲を広げるか、カード枚数を減らしてください。`,
@@ -112,28 +125,27 @@ class ItoLeaveButton extends BaseInteractionManager<ButtonInteraction> {
 
             // ボタンを更新（最低2人で開始可能）
             const canStart = updatedGame.canStart();
-            const joinRow = new ActionRowBuilder<ButtonBuilder>()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId(`${CustomIds.ItoJoin}${gameId}`)
-                        .setLabel("参加する")
-                        .setStyle(ButtonStyle.Primary)
-                        .setEmoji("🎯"),
-                    new ButtonBuilder()
-                        .setCustomId(`${CustomIds.ItoLeave}${gameId}`)
-                        .setLabel("退出する")
-                        .setStyle(ButtonStyle.Secondary)
-                        .setEmoji("🚪"),
-                    new ButtonBuilder()
-                        .setCustomId(`${CustomIds.ItoStart}${gameId}`)
-                        .setLabel("ゲーム開始")
-                        .setStyle(ButtonStyle.Success)
-                        .setEmoji("▶️")
-                        .setDisabled(!canStart)
-                );
-            
-            const controlRow = new ActionRowBuilder<ButtonBuilder>()
-                .addComponents(
+            const joinRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`${CustomIds.ItoJoin}${gameId}`)
+                    .setLabel("参加する")
+                    .setStyle(ButtonStyle.Primary)
+                    .setEmoji("🎯"),
+                new ButtonBuilder()
+                    .setCustomId(`${CustomIds.ItoLeave}${gameId}`)
+                    .setLabel("退出する")
+                    .setStyle(ButtonStyle.Secondary)
+                    .setEmoji("🚪"),
+                new ButtonBuilder()
+                    .setCustomId(`${CustomIds.ItoStart}${gameId}`)
+                    .setLabel("ゲーム開始")
+                    .setStyle(ButtonStyle.Success)
+                    .setEmoji("▶️")
+                    .setDisabled(!canStart)
+            );
+
+            const controlRow =
+                new ActionRowBuilder<ButtonBuilder>().addComponents(
                     new ButtonBuilder()
                         .setCustomId(`${CustomIds.ItoCancel}${gameId}`)
                         .setLabel("募集キャンセル")
@@ -146,8 +158,9 @@ class ItoLeaveButton extends BaseInteractionManager<ButtonInteraction> {
                 components: [joinRow, controlRow],
             });
 
-            Logger.info(`プレイヤーが退出しました: ${this.interaction.user.username} (${gameId})`);
-
+            Logger.info(
+                `プレイヤーが退出しました: ${this.interaction.user.username} (${gameId})`
+            );
         } catch (error) {
             Logger.error(`ito退出ボタンエラー: ${error}`);
             await this.interaction.reply({
@@ -163,4 +176,4 @@ const itoLeaveButton: ButtonPack = {
     instance: instance(ItoLeaveButton),
 };
 
-export default itoLeaveButton; 
+export default itoLeaveButton;

@@ -1,9 +1,5 @@
 import { GameStatus } from "@prisma/client";
-import {
-    ButtonInteraction,
-    ComponentType,
-    EmbedBuilder,
-} from "discord.js";
+import { ButtonInteraction, ComponentType, EmbedBuilder } from "discord.js";
 import { ButtonPack, instance } from "~/interfaces/IDiscord";
 import { CustomIds } from "~/interfaces/IEnum";
 import { DIContainer } from "~/lib/DIContainer";
@@ -23,8 +19,14 @@ class ItoForceEndButton extends BaseInteractionManager<ButtonInteraction> {
             for (const actionRow of this.interaction.message.components) {
                 if (actionRow.type === ComponentType.ActionRow) {
                     for (const component of actionRow.components) {
-                        if (component.type === ComponentType.Button && component.customId?.includes(CustomIds.ItoPlay)) {
-                            gameId = component.customId.replace(CustomIds.ItoPlay, "");
+                        if (
+                            component.type === ComponentType.Button &&
+                            component.customId?.includes(CustomIds.ItoPlay)
+                        ) {
+                            gameId = component.customId.replace(
+                                CustomIds.ItoPlay,
+                                ""
+                            );
                             break;
                         }
                     }
@@ -86,7 +88,9 @@ class ItoForceEndButton extends BaseInteractionManager<ButtonInteraction> {
             // 強制終了メッセージを作成
             const embed = new EmbedBuilder()
                 .setTitle("⏹️ ゲーム強制終了")
-                .setDescription(`${this.interaction.user} により強制終了されました。`)
+                .setDescription(
+                    `${this.interaction.user} により強制終了されました。`
+                )
                 .setColor(0x808080)
                 .setTimestamp();
 
@@ -129,8 +133,9 @@ class ItoForceEndButton extends BaseInteractionManager<ButtonInteraction> {
                 components: [],
             });
 
-            Logger.info(`ゲームが強制終了されました: ${gameId} by ${this.interaction.user.username}`);
-
+            Logger.info(
+                `ゲームが強制終了されました: ${gameId} by ${this.interaction.user.username}`
+            );
         } catch (error) {
             Logger.error(`ito強制終了ボタンエラー: ${error}`);
             await this.interaction.reply({

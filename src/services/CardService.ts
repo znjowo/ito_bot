@@ -8,15 +8,28 @@ export interface ICardService {
     getPlayerCards(gameId: string, discordId: string): Promise<Card[]>;
     playCard(gameId: string, discordId: string): Promise<Card | null>;
     handleCardSuccess(gameId: string, cardNumber: number): Promise<void>;
-    handleCardFailure(gameId: string, discordId: string, revealedNumber: number): Promise<void>;
-    isCorrectCard(gameId: string, cardNumber: number, discordId?: string): Promise<boolean>;
+    handleCardFailure(
+        gameId: string,
+        discordId: string,
+        revealedNumber: number
+    ): Promise<void>;
+    isCorrectCard(
+        gameId: string,
+        cardNumber: number,
+        discordId?: string
+    ): Promise<boolean>;
     getRevealedCards(gameId: string): Promise<number[]>;
-    getRevealedCardsWithPlayers(gameId: string): Promise<{ number: number; playerName: string }[]>;
+    getRevealedCardsWithPlayers(
+        gameId: string
+    ): Promise<{ number: number; playerName: string }[]>;
     revealAllCards(gameId: string): Promise<CardWithPlayer[]>;
     isGameClear(gameId: string): Promise<boolean>;
     isGameOver(gameId: string): Promise<boolean>;
     getRemainingCardCount(gameId: string): Promise<number>;
-    getPlayerRemainingCardCount(gameId: string, discordId: string): Promise<number>;
+    getPlayerRemainingCardCount(
+        gameId: string,
+        discordId: string
+    ): Promise<number>;
 }
 
 export class CardService implements ICardService {
@@ -28,10 +41,14 @@ export class CardService implements ICardService {
 
     async getPlayerCards(gameId: string, discordId: string): Promise<Card[]> {
         try {
-            const player = await this.playerRepository.findByDiscordId(discordId);
+            const player =
+                await this.playerRepository.findByDiscordId(discordId);
             if (!player) return [];
 
-            return await this.cardRepository.findActiveByPlayer(gameId, player.id);
+            return await this.cardRepository.findActiveByPlayer(
+                gameId,
+                player.id
+            );
         } catch (error) {
             Logger.error(`プレイヤー手札取得エラー: ${error}`);
             throw error;
@@ -40,19 +57,25 @@ export class CardService implements ICardService {
 
     async playCard(gameId: string, discordId: string): Promise<Card | null> {
         try {
-            const player = await this.playerRepository.findByDiscordId(discordId);
+            const player =
+                await this.playerRepository.findByDiscordId(discordId);
             if (!player) {
                 throw new Error("プレイヤーが見つかりません");
             }
 
             // 最小値のカードを取得
-            const card = await this.cardRepository.findSmallestUnrevealed(gameId, player.id);
+            const card = await this.cardRepository.findSmallestUnrevealed(
+                gameId,
+                player.id
+            );
             if (!card) return null;
 
             // カードを提示状態に更新
             const updatedCard = await this.cardRepository.reveal(card.id);
 
-            Logger.info(`カードを提示しました: ${discordId} -> ${card.number} (${gameId})`);
+            Logger.info(
+                `カードを提示しました: ${discordId} -> ${card.number} (${gameId})`
+            );
             return updatedCard;
         } catch (error) {
             Logger.error(`カード提示エラー: ${error}`);
@@ -66,16 +89,25 @@ export class CardService implements ICardService {
             const newRevealedCards = [...revealedCards, cardNumber];
             newRevealedCards.sort((a, b) => a - b);
 
-            await this.gameRepository.updateRevealedCards(gameId, newRevealedCards);
+            await this.gameRepository.updateRevealedCards(
+                gameId,
+                newRevealedCards
+            );
 
-            Logger.info(`カード成功処理: ${gameId} - カード${cardNumber}を場に追加`);
+            Logger.info(
+                `カード成功処理: ${gameId} - カード${cardNumber}を場に追加`
+            );
         } catch (error) {
             Logger.error(`カード成功処理エラー: ${error}`);
             throw error;
         }
     }
 
-    async handleCardFailure(gameId: string, discordId: string, revealedNumber: number): Promise<void> {
+    async handleCardFailure(
+        gameId: string,
+        discordId: string,
+        revealedNumber: number
+    ): Promise<void> {
         try {
             // 全体の失敗数を増加
             await this.gameRepository.incrementFailureCount(gameId);
@@ -85,23 +117,27 @@ export class CardService implements ICardService {
 
             // 削除対象のカードを特定（revealedNumber以下で場に出ていないカード）
             const numbersToEliminate = Array.from(
-                { length: revealedNumber }, 
+                { length: revealedNumber },
                 (_, i) => i + 1
             ).filter(num => num <= revealedNumber);
 
             // 削除対象のカードを削除状態に設定
-            const eliminatedCards = await this.cardRepository.eliminateByNumbers(
-                gameId, 
-                numbersToEliminate, 
-                revealedCards
-            );
+            const eliminatedCards =
+                await this.cardRepository.eliminateByNumbers(
+                    gameId,
+                    numbersToEliminate,
+                    revealedCards
+                );
 
             // 削除されたカードを場に追加
             const eliminatedNumbers = eliminatedCards.map(card => card.number);
             const newRevealedCards = [...revealedCards, ...eliminatedNumbers];
             newRevealedCards.sort((a, b) => a - b);
 
-            await this.gameRepository.updateRevealedCards(gameId, newRevealedCards);
+            await this.gameRepository.updateRevealedCards(
+                gameId,
+                newRevealedCards
+            );
 
             Logger.info(
                 `カード失敗処理: ${discordId} (${gameId}) - ${revealedNumber}以下の手札カードを削除し場に追加: [${eliminatedNumbers.join(", ")}]`
@@ -112,21 +148,34 @@ export class CardService implements ICardService {
         }
     }
 
-    async isCorrectCard(gameId: string, cardNumber: number, discordId?: string): Promise<boolean> {
+    async isCorrectCard(
+        gameId: string,
+        cardNumber: number,
+        discordId?: string
+    ): Promise<boolean> {
         try {
             // ゲーム内にその数字のカードが存在するかチェック
             const gameCards = await this.cardRepository.findByGame(gameId);
-            const cardExists = gameCards.some(card => card.number === cardNumber);
-            
+            const cardExists = gameCards.some(
+                card => card.number === cardNumber
+            );
+
             if (!cardExists) return false;
 
             // プレイヤーが指定されている場合、そのプレイヤーが持っているかチェック
             if (discordId) {
-                const player = await this.playerRepository.findByDiscordId(discordId);
+                const player =
+                    await this.playerRepository.findByDiscordId(discordId);
                 if (!player) return false;
 
-                const playerCards = await this.cardRepository.findActiveByPlayer(gameId, player.id);
-                const hasCard = playerCards.some(card => card.number === cardNumber);
+                const playerCards =
+                    await this.cardRepository.findActiveByPlayer(
+                        gameId,
+                        player.id
+                    );
+                const hasCard = playerCards.some(
+                    card => card.number === cardNumber
+                );
                 if (!hasCard) return false;
             }
 
@@ -154,19 +203,23 @@ export class CardService implements ICardService {
         }
     }
 
-    async getRevealedCardsWithPlayers(gameId: string): Promise<{ number: number; playerName: string }[]> {
+    async getRevealedCardsWithPlayers(
+        gameId: string
+    ): Promise<{ number: number; playerName: string }[]> {
         try {
             const revealedCards = await this.getRevealedCards(gameId);
-            const cardsWithPlayers: { number: number; playerName: string }[] = [];
+            const cardsWithPlayers: { number: number; playerName: string }[] =
+                [];
 
             for (const cardNumber of revealedCards) {
                 const allCards = await this.cardRepository.findByGame(gameId);
                 const card = allCards.find(c => c.number === cardNumber);
-                
+
                 if (card) {
-                    const cardWithPlayer = await this.cardRepository.findAllWithPlayers(gameId);
+                    const cardWithPlayer =
+                        await this.cardRepository.findAllWithPlayers(gameId);
                     const cardInfo = cardWithPlayer.find(c => c.id === card.id);
-                    
+
                     if (cardInfo) {
                         cardsWithPlayers.push({
                             number: cardNumber,
@@ -186,7 +239,9 @@ export class CardService implements ICardService {
     async revealAllCards(gameId: string): Promise<CardWithPlayer[]> {
         try {
             const cards = await this.cardRepository.findAllWithPlayers(gameId);
-            Logger.info(`全カードを開示しました: ${gameId} (${cards.length}枚)`);
+            Logger.info(
+                `全カードを開示しました: ${gameId} (${cards.length}枚)`
+            );
             return cards;
         } catch (error) {
             Logger.error(`全カード開示エラー: ${error}`);
@@ -196,7 +251,8 @@ export class CardService implements ICardService {
 
     async isGameClear(gameId: string): Promise<boolean> {
         try {
-            const remainingCount = await this.cardRepository.countRemaining(gameId);
+            const remainingCount =
+                await this.cardRepository.countRemaining(gameId);
             return remainingCount === 0;
         } catch (error) {
             Logger.error(`ゲームクリアチェックエラー: ${error}`);
@@ -233,35 +289,48 @@ export class CardService implements ICardService {
         }
     }
 
-    async getPlayerRemainingCardCount(gameId: string, discordId: string): Promise<number> {
+    async getPlayerRemainingCardCount(
+        gameId: string,
+        discordId: string
+    ): Promise<number> {
         try {
-            const player = await this.playerRepository.findByDiscordId(discordId);
+            const player =
+                await this.playerRepository.findByDiscordId(discordId);
             if (!player) return 0;
 
-            return await this.cardRepository.countRemainingByPlayer(gameId, player.id);
+            return await this.cardRepository.countRemainingByPlayer(
+                gameId,
+                player.id
+            );
         } catch (error) {
             Logger.error(`プレイヤー残りカード数取得エラー: ${error}`);
             return 0;
         }
     }
 
-    private async isSmallestCard(gameId: string, cardNumber: number): Promise<boolean> {
+    private async isSmallestCard(
+        gameId: string,
+        cardNumber: number
+    ): Promise<boolean> {
         try {
             const allCards = await this.cardRepository.findByGame(gameId);
             // 手札にあるカード：削除されておらず、場に出ていないカード
             // ただし、現在提示中のカードは含める（まだ場に出る前の判定のため）
-            const handCards = allCards.filter(card => 
-                !card.isEliminated && 
-                (!card.isRevealed || card.number === cardNumber)
+            const handCards = allCards.filter(
+                card =>
+                    !card.isEliminated &&
+                    (!card.isRevealed || card.number === cardNumber)
             );
-            
+
             if (handCards.length === 0) return false;
-            
-            const smallestNumber = Math.min(...handCards.map(card => card.number));
+
+            const smallestNumber = Math.min(
+                ...handCards.map(card => card.number)
+            );
             return cardNumber === smallestNumber;
         } catch (error) {
             Logger.error(`最小カードチェックエラー: ${error}`);
             return false;
         }
     }
-} 
+}
