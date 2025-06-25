@@ -81,8 +81,8 @@ export default class BotManager {
                 async () => {
                     await this.updatePresence();
                 },
-                5 * 60 * 1000
-            ); // 5分 = 300,000ms
+                24 * 60 * 60 * 1000
+            ); // 24時間 = 86,400,000ms
 
             Logger.info(`ボット準備完了: ${this.client.user?.tag}`);
         } catch (error) {
