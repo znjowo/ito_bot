@@ -21,6 +21,10 @@ const client = new Client({
     ],
 });
 
+client.guilds.cache.forEach(async guild => {
+    await guild.leave();
+});
+
 // エラーハンドラーの設定
 const errorHandler = ErrorHandler.getInstance();
 
