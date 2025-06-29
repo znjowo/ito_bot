@@ -127,6 +127,12 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
                           .join("\n")
                     : "まだカードが出されていません";
 
+            // 残りカード枚数を取得
+            const remainingCardCount = await this.cardService.getRemainingCardCount(gameId);
+
+            // お題情報を取得
+            const topic = updatedGame.topic;
+
             // 成功メッセージを作成
             const embed = new EmbedBuilder()
                 .setTitle("✅ カード提示成功！")
@@ -135,8 +141,13 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
                 )
                 .addFields(
                     {
-                        name: "📊 現在の状況",
-                        value: `失敗回数: ${updatedGame.failureCount}/${updatedGame.hp}`,
+                        name: "� お題",
+                        value: topic ? `**${topic.title}**\n${topic.description}` : "お題が設定されていません",
+                        inline: false,
+                    },
+                    {
+                        name: "�📊 現在の状況",
+                        value: `失敗回数: ${updatedGame.failureCount}/${updatedGame.hp}\n残りカード: ${remainingCardCount}枚`,
                         inline: true,
                     },
                     {
@@ -157,6 +168,16 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
                     .setDescription("全員が手札を出し切りました！")
                     .setColor(0xffd700);
 
+                // お題情報を再度追加
+                if (topic) {
+                    embed.spliceFields(0, 1); // 最初のお題フィールドを削除
+                    embed.addFields({
+                        name: "📝 お題",
+                        value: `**${topic.title}**\n${topic.description}`,
+                        inline: false,
+                    });
+                }
+
                 // 全カードを開示
                 const allCards = await this.cardService.revealAllCards(gameId);
                 const playerCards = new Map<
@@ -172,7 +193,7 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
                             cards: [],
                         });
                     }
-                    playerCards.get(key)!.cards.push(cardData.number);
+                    playerCards.get(key)!.cards.push((cardData as any).number);
                 }
 
                 for (const [discordId, playerData] of playerCards) {
@@ -231,6 +252,12 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
                           .join("\n")
                     : "まだカードが出されていません";
 
+            // 残りカード枚数を取得
+            const remainingCardCount = await this.cardService.getRemainingCardCount(gameId);
+
+            // お題情報を取得
+            const topic = updatedGame.topic;
+
             // 失敗メッセージを作成
             const embed = new EmbedBuilder()
                 .setTitle("❌ カード提示失敗！")
@@ -239,8 +266,13 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
                 )
                 .addFields(
                     {
-                        name: "📊 現在の状況",
-                        value: `失敗回数: ${updatedGame.failureCount}/${updatedGame.hp}`,
+                        name: "� お題",
+                        value: topic ? `**${topic.title}**\n${topic.description}` : "お題が設定されていません",
+                        inline: false,
+                    },
+                    {
+                        name: "�📊 現在の状況",
+                        value: `失敗回数: ${updatedGame.failureCount}/${updatedGame.hp}\n残りカード: ${remainingCardCount}枚`,
                         inline: true,
                     },
                     {
@@ -274,6 +306,16 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
                         .setColor(0x8b0000);
                 }
 
+                // お題情報を再度追加
+                if (topic) {
+                    embed.spliceFields(0, 1); // 最初のお題フィールドを削除
+                    embed.addFields({
+                        name: "📝 お題",
+                        value: `**${topic.title}**\n${topic.description}`,
+                        inline: false,
+                    });
+                }
+
                 // 全カードを開示
                 const allCards = await this.cardService.revealAllCards(gameId);
                 const playerCards = new Map<
@@ -295,12 +337,12 @@ class ItoPlayButton extends BaseInteractionManager<ButtonInteraction> {
                         });
                     }
 
-                    if (cardData.isEliminated) {
+                    if ((cardData as any).isEliminated) {
                         playerCards
                             .get(key)!
-                            .eliminatedCards.push(cardData.number);
+                            .eliminatedCards.push((cardData as any).number);
                     } else {
-                        playerCards.get(key)!.cards.push(cardData.number);
+                        playerCards.get(key)!.cards.push((cardData as any).number);
                     }
                 }
 
