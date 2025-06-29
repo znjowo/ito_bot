@@ -73,7 +73,7 @@ class ItoJoinButton extends BaseInteractionManager<ButtonInteraction> {
 
             // 参加者リストを作成
             const playerList = updatedGame.players
-                .map(player => `• ${player.player.username}`)
+                .map(player => `<@${player.player.id}>`)
                 .join("\n");
 
             // 埋め込みメッセージを更新
